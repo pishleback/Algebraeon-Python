@@ -1,18 +1,18 @@
 ```python
 from algebraeon import *
 
-+Nat(2)
+assert(+Nat(2) == 2)
 
-Nat(3) + 5
-3 + Nat(5)
-Nat(3) + Nat(5)
+assert(Nat(3) + 5 == 8)
+assert(3 + Nat(5) == 8)
+assert(Nat(3) + Nat(5) == 8)
 
-Nat(3) * 5
-3 * Nat(5)
-Nat(3) * Nat(5)
+assert(Nat(3) * 5 == 15)
+assert(3 * Nat(5) == 15)
+assert(Nat(3) * Nat(5) == 15)
 
-Nat(3) ** 5
-Nat(3) ** Nat(5)
+assert(Nat(3) ** 5 == 243)
+assert(Nat(3) ** Nat(5) == 243)
 ```
 
 ```python
@@ -57,34 +57,44 @@ assert(not Int(1) < Int(0))
 ```python
 from algebraeon import *
 
-+Rat(2)
+assert(+Rat(2) == 2)
 
--Rat(2)
+assert(-Rat(2) == -2)
 
-Rat(3) + 5
-3 + Rat(5)
-Rat(3) + Nat(5)
-Nat(3) + Rat(5)
-Rat(3) + Int(5)
-Int(3) + Rat(5)
-Rat(3) + Rat(5)
+assert(Rat(3) + 5 == 8)
+assert(3 + Rat(5) == 8)
+assert(Rat(3) + Nat(5) == 8)
+assert(Nat(3) + Rat(5) == 8)
+assert(Rat(3) + Int(5) == 8)
+assert(Int(3) + Rat(5) == 8)
+assert(Rat(3) + Rat(5) == 8)
 
-Rat(3) - 5
-3 - Rat(5)
-Rat(3) - Nat(5)
-Nat(3) - Rat(5)
-Rat(3) - Int(5)
-Int(3) - Rat(5)
-Rat(3) - Rat(5)
+assert(Rat(3) - 5 == -2)
+assert(3 - Rat(5) == -2)
+assert(Rat(3) - Nat(5) == -2)
+assert(Nat(3) - Rat(5) == -2)
+assert(Rat(3) - Int(5) == -2)
+assert(Int(3) - Rat(5) == -2)
+assert(Rat(3) - Rat(5) == -2)
 
-Rat(3) * 5
-3 * Rat(5)
-Rat(3) * Nat(5)
-Nat(3) * Rat(5)
-Rat(3) * Int(5)
-Int(3) * Rat(5)
-Rat(3) * Rat(5)
+assert(Rat(3) * 5 == 15)
+assert(3 * Rat(5) == 15)
+assert(Rat(3) * Nat(5) == 15)
+assert(Nat(3) * Rat(5) == 15)
+assert(Rat(3) * Int(5) == 15)
+assert(Int(3) * Rat(5) == 15)
+assert(Rat(3) * Rat(5) == 15)
 
-Rat(3) ** 5
-Rat(3) ** Nat(5)
+assert(Rat(3) ** 5 == 243)
+assert(Rat(3) ** Nat(5) == 243)
+
+assert(Rat(0) == Rat(0))
+assert(Rat(0) <= Rat(0))
+assert(not Rat(0) < Rat(0))
+assert(not Rat(0) == Rat(1))
+assert(Rat(0) <= Rat(1))
+assert(Rat(0) < Rat(1))
+assert(not Rat(1) == Rat(0))
+assert(not Rat(1) <= Rat(0))
+assert(not Rat(1) < Rat(0))
 ```
