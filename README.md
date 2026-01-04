@@ -24,4 +24,3 @@ One time setup:
 To build the `algebraeon` Python module locally and run the tests in the User Guide against the local build:
 1. `cd` into `examples`.
 2. Run `cargo run`.
-
