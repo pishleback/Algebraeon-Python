@@ -1,3 +1,4 @@
 {
-    "python.envFile": "${workspaceFolder}/algebraeon/.env"
+    "python.envFile": "${workspaceFolder}/algebraeon/.env",
+    "python-envs.pythonProjects": []
 }

@@ -9,5 +9,19 @@ classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
+    "Development Status :: 1 - Planning",
 ]
 dynamic = ["version"]
+description = "A Pythonic wrapper around the Rust library Algebraeon for computational algebra."
+readme = "../README.md"
+license = "GPL-3.0-only"
+keywords = [
+    "math",
+    "maths",
+    "algebra",
+    "polynomial",
+    "matrix",
+    "linear algebra",
+    "factoring",
+    "algebraic number",
+]

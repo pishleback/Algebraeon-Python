@@ -1,20 +1,24 @@
+use ::algebraeon::rings::structure::AdditiveGroupSignature;
+use ::algebraeon::rings::structure::SemiRingSignature;
+use ::algebraeon::sets::structure::EqSignature;
 use ::algebraeon::{
-    nzq::{Integer, Natural, Rational},
-    rings::polynomial::Polynomial,
+    nzq::{
+        Integer, IntegerCanonicalStructure, Natural, NaturalCanonicalStructure, Rational,
+        RationalCanonicalStructure,
+    },
+    rings::structure::AdditiveMonoidSignature,
+    sets::structure::{MetaType, SetSignature, Signature},
 };
 use num_bigint::{BigInt, BigUint};
-use pyo3::{
-    IntoPyObjectExt,
-    exceptions::{PyTypeError, PyValueError},
-    prelude::*,
-};
+use pyo3::basic::CompareOp;
+use pyo3::exceptions::PyValueError;
+use pyo3::{IntoPyObjectExt, PyTypeInfo, exceptions::PyTypeError, prelude::*};
 
 #[pymodule]
 fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PythonNatural>()?;
     m.add_class::<PythonInteger>()?;
     m.add_class::<PythonRational>()?;
-    m.add_class::<PythonPolynomial>()?;
 
     // m.add_class::<natural::PythonNatural>()?;
 
@@ -23,141 +27,274 @@ fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-pub fn bignum_to_algebraeon_nat(x: &BigUint) -> Natural {
+fn bignum_to_algebraeon_nat(x: &BigUint) -> Natural {
     // TODO: use a more efficient method
     use std::str::FromStr;
     Natural::from_str(x.to_string().as_str()).unwrap()
 }
 
-pub fn algebraeon_to_bignum_nat(x: &Natural) -> BigUint {
+fn algebraeon_to_bignum_nat(x: &Natural) -> BigUint {
     // TODO: use a more efficient method
     use std::str::FromStr;
     BigUint::from_str(x.to_string().as_str()).unwrap()
 }
 
-pub fn bignum_to_algebraeon_int(x: &BigInt) -> Integer {
+fn bignum_to_algebraeon_int(x: &BigInt) -> Integer {
     // TODO: use a more efficient method
     use std::str::FromStr;
     Integer::from_str(x.to_string().as_str()).unwrap()
 }
 
-pub fn algebraeon_to_bignum_int(x: &Integer) -> BigInt {
+fn algebraeon_to_bignum_int(x: &Integer) -> BigInt {
     // TODO: use a more efficient method
     use std::str::FromStr;
     BigInt::from_str(x.to_string().as_str()).unwrap()
 }
 
-trait Cast: Sized {
-    fn frompy<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self>;
-}
-
-impl Cast for Natural {
-    fn frompy<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Ok(PythonNatural::py_new(obj)?.inner)
-    }
-}
-
-impl Cast for Integer {
-    fn frompy<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Ok(PythonInteger::py_new(obj)?.inner)
-    }
-}
-
-impl Cast for Rational {
-    fn frompy<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Ok(PythonRational::py_new(obj)?.inner)
-    }
-}
-
-trait PythonCast<'py>: Sized + for<'a> FromPyObject<'a, 'py> {
-    fn zero() -> Option<Self>;
-
-    fn frompy_eq_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self>;
-
-    fn frompy_lt_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self>;
-
-    fn frompy_gt_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self>;
-
-    fn frompy_lt_common(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
+trait PythonCast<'py>: Sized + for<'a> FromPyObject<'a, 'py> + PyTypeInfo {
+    fn cast_exact(obj: &Bound<'py, PyAny>) -> Option<Self> {
+        if let Ok(obj) = obj.extract::<Self>() {
+            Some(obj)
+        } else {
+            None
+        }
     }
 
-    fn frompy_gt_common(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+    fn cast_equiv(obj: &Bound<'py, PyAny>) -> Option<Option<Self>>;
+
+    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self>;
+
+    fn cast_subtype(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+        let orig_obj = obj;
         let py = obj.py();
-        if let Ok(obj) = PythonPolynomial::frompy_ge(obj) {
-            if obj.inner.is_empty()
-                && let Some(zero) = Self::zero()
-            {
-                Ok(zero)
-            } else if obj.inner.len() == 1
-                && let Ok(obj) = Self::frompy(obj.inner[0].bind(py))
-            {
+        if let Some(obj) = Self::cast_exact(obj) {
+            Ok(obj)
+        } else if let Some(obj) = Self::cast_equiv(obj) {
+            if let Some(obj) = obj {
                 Ok(obj)
             } else {
-                Err(PyTypeError::new_err(""))
+                Err(PyValueError::new_err(format!(
+                    "Can't cast `{}` to `{}`",
+                    orig_obj.repr()?,
+                    Self::type_object(py).name()?
+                )))
             }
+        } else if let Some(obj) = Self::cast_proper_subtype(obj) {
+            Ok(obj)
         } else {
-            Err(PyTypeError::new_err(""))
+            Err(PyTypeError::new_err(format!(
+                "Can't cast `{}` to `{}`",
+                orig_obj.repr()?,
+                Self::type_object(py).name()?
+            )))
         }
     }
+}
 
-    fn frompy_eq_common(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = obj.extract::<Self>() {
-            Ok(obj)
-        } else {
-            Err(PyTypeError::new_err(""))
-        }
-    }
+trait PythonStructure {
+    type Structure: SetSignature;
 
-    fn frompy_lt(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = Self::frompy_lt_common(obj) {
-            Ok(obj)
-        } else {
-            Ok(Self::frompy_lt_impl(obj)?)
-        }
-    }
+    fn structure(&self) -> Self::Structure;
 
-    fn frompy_gt(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = Self::frompy_gt_common(obj) {
-            Ok(obj)
-        } else {
-            Ok(Self::frompy_gt_impl(obj)?)
-        }
-    }
+    fn inner(&self) -> &<Self::Structure as SetSignature>::Set;
+}
 
-    fn frompy_eq(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = Self::frompy_eq_common(obj) {
-            Ok(obj)
-        } else {
-            Ok(Self::frompy_eq_impl(obj)?)
+macro_rules! impl_pymethods_eq {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __richcmp__<'py>(
+                &self,
+                other: &Bound<'py, PyAny>,
+                op: CompareOp,
+            ) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    let eq_result = structure.equal(self.inner(), other.inner());
+                    match op {
+                        CompareOp::Eq => Ok(eq_result.into_py_any(py)?),
+                        CompareOp::Ne => Ok((!eq_result).into_py_any(py)?),
+                        CompareOp::Lt | CompareOp::Le | CompareOp::Gt | CompareOp::Ge => {
+                            Ok(py.NotImplemented())
+                        }
+                    }
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
         }
-    }
+    };
+}
 
-    fn frompy_le(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = Self::frompy_eq(obj) {
-            Ok(obj)
-        } else {
-            Ok(Self::frompy_lt_impl(obj)?)
-        }
-    }
+macro_rules! impl_pymethods_add {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __add__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    Ok(Self {
+                        inner: structure.add(self.inner(), other.inner()),
+                    }
+                    .into_py_any(py)?)
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
 
-    fn frompy_ge(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = Self::frompy_eq(obj) {
-            Ok(obj)
-        } else {
-            Ok(Self::frompy_gt_impl(obj)?)
+            fn __radd__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    Ok(Self {
+                        inner: structure.add(other.inner(), self.inner()),
+                    }
+                    .into_py_any(py)?)
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
         }
-    }
+    };
+}
 
-    fn frompy(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = Self::frompy_eq(obj) {
-            Ok(obj)
-        } else if let Ok(obj) = Self::frompy_lt(obj) {
-            Ok(obj)
-        } else {
-            Ok(Self::frompy_gt(obj)?)
+macro_rules! impl_pymethods_pos {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __pos__<'py>(&self, py: Python<'py>) -> PyResult<Py<PyAny>> {
+                Ok(Self {
+                    inner: self.inner().clone(),
+                }
+                .into_py_any(py)?)
+            }
         }
-    }
+    };
+}
+
+macro_rules! impl_pymethods_neg {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __neg__<'py>(&self, py: Python<'py>) -> PyResult<Py<PyAny>> {
+                Ok(Self {
+                    inner: self.structure().neg(self.inner()),
+                }
+                .into_py_any(py)?)
+            }
+        }
+    };
+}
+
+macro_rules! impl_pymethods_sub {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __sub__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    Ok(Self {
+                        inner: structure.sub(self.inner(), other.inner()),
+                    }
+                    .into_py_any(py)?)
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
+
+            fn __rsub__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    Ok(Self {
+                        inner: structure.sub(other.inner(), self.inner()),
+                    }
+                    .into_py_any(py)?)
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_pymethods_mul {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __mul__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    Ok(Self {
+                        inner: structure.mul(self.inner(), other.inner()),
+                    }
+                    .into_py_any(py)?)
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
+
+            fn __rmul__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    Ok(Self {
+                        inner: structure.mul(other.inner(), self.inner()),
+                    }
+                    .into_py_any(py)?)
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_pymethods_nat_pow {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __pow__<'py>(
+                &self,
+                other: &Bound<'py, PyAny>,
+                modulus: &Bound<'py, PyAny>,
+            ) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if !modulus.is_none() {
+                    Ok(py.NotImplemented())
+                } else {
+                    if let Ok(other) = PythonNatural::py_new(other) {
+                        Ok(Self {
+                            inner: self.structure().nat_pow(self.inner(), other.inner()),
+                        }
+                        .into_py_any(py)?)
+                    } else {
+                        Ok(py.NotImplemented())
+                    }
+                }
+            }
+
+            fn __rpow__<'py>(
+                &self,
+                other: &Bound<'py, PyAny>,
+                _modulus: &Bound<'py, PyAny>,
+            ) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                Ok(py.NotImplemented())
+            }
+        }
+    };
 }
 
 #[pyclass(name = "Nat")]
@@ -166,99 +303,49 @@ pub struct PythonNatural {
     inner: Natural,
 }
 
-#[pyclass(name = "Int")]
-#[derive(Clone)]
-pub struct PythonInteger {
-    inner: Integer,
-}
-
-#[pyclass(name = "Rat")]
-#[derive(Clone)]
-pub struct PythonRational {
-    inner: Rational,
-}
-
 impl<'py> PythonCast<'py> for PythonNatural {
-    fn zero() -> Option<Self> {
-        Some(PythonNatural {
-            inner: Natural::ZERO,
-        })
-    }
-
-    fn frompy_eq_impl(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
-    }
-
-    fn frompy_lt_impl(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
-    }
-
-    fn frompy_gt_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let obj = PythonInteger::frompy_ge(obj)?;
-        if let Ok(n) = Natural::try_from(obj.inner) {
-            Ok(Self { inner: n })
+    fn cast_equiv(obj: &Bound<'py, PyAny>) -> Option<Option<Self>> {
+        if let Ok(n) = obj.extract::<BigInt>() {
+            Some(
+                if let Ok(n) = Natural::try_from(bignum_to_algebraeon_int(&n)) {
+                    Some(Self { inner: n })
+                } else {
+                    None
+                },
+            )
         } else {
-            Err(PyValueError::new_err(""))
+            None
         }
     }
-}
 
-impl<'py> PythonCast<'py> for PythonInteger {
-    fn zero() -> Option<Self> {
-        Some(Self {
-            inner: Integer::ZERO,
-        })
-    }
-
-    fn frompy_eq_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Ok(Self {
-            inner: bignum_to_algebraeon_int(&obj.extract::<BigInt>()?),
-        })
-    }
-
-    fn frompy_lt_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Ok(Self {
-            inner: Integer::from(PythonNatural::frompy_le(obj)?.inner),
-        })
-    }
-
-    fn frompy_gt_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let obj = PythonRational::frompy_ge(obj)?;
-        if let Ok(n) = Integer::try_from(obj.inner) {
-            Ok(Self { inner: n })
-        } else {
-            Err(PyValueError::new_err(""))
-        }
+    fn cast_proper_subtype(_obj: &Bound<'py, PyAny>) -> Option<Self> {
+        None
     }
 }
 
-impl<'py> PythonCast<'py> for PythonRational {
-    fn zero() -> Option<Self> {
-        Some(Self {
-            inner: Rational::ZERO,
-        })
+impl PythonStructure for PythonNatural {
+    type Structure = NaturalCanonicalStructure;
+
+    fn structure(&self) -> Self::Structure {
+        Natural::structure()
     }
 
-    fn frompy_eq_impl(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
-    }
-
-    fn frompy_lt_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Ok(Self {
-            inner: Rational::from(PythonInteger::frompy_le(obj)?.inner),
-        })
-    }
-
-    fn frompy_gt_impl(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
+    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
     }
 }
+
+impl_pymethods_eq!(PythonNatural);
+impl_pymethods_pos!(PythonNatural);
+impl_pymethods_add!(PythonNatural);
+impl_pymethods_mul!(PythonNatural);
+impl_pymethods_nat_pow!(PythonNatural);
 
 #[pymethods]
 impl PythonNatural {
     #[new]
     fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::frompy(obj)
+        Self::cast_subtype(obj)
     }
 
     fn __int__(&self) -> BigUint {
@@ -274,11 +361,59 @@ impl PythonNatural {
     }
 }
 
+#[pyclass(name = "Int")]
+#[derive(Clone)]
+pub struct PythonInteger {
+    inner: Integer,
+}
+
+impl<'py> PythonCast<'py> for PythonInteger {
+    fn cast_equiv(obj: &Bound<'py, PyAny>) -> Option<Option<Self>> {
+        if let Ok(n) = obj.extract::<BigInt>() {
+            Some(Some(Self {
+                inner: bignum_to_algebraeon_int(&n),
+            }))
+        } else {
+            None
+        }
+    }
+
+    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
+        if let Ok(n) = PythonNatural::cast_subtype(obj) {
+            Some(Self {
+                inner: Integer::from(n.inner),
+            })
+        } else {
+            None
+        }
+    }
+}
+
+impl PythonStructure for PythonInteger {
+    type Structure = IntegerCanonicalStructure;
+
+    fn structure(&self) -> Self::Structure {
+        Integer::structure()
+    }
+
+    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+}
+
+impl_pymethods_eq!(PythonInteger);
+impl_pymethods_pos!(PythonInteger);
+impl_pymethods_add!(PythonInteger);
+impl_pymethods_neg!(PythonInteger);
+impl_pymethods_sub!(PythonInteger);
+impl_pymethods_mul!(PythonInteger);
+impl_pymethods_nat_pow!(PythonInteger);
+
 #[pymethods]
 impl PythonInteger {
     #[new]
     fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::frompy(obj)
+        Self::cast_subtype(obj)
     }
 
     fn __int__(&self) -> BigInt {
@@ -294,15 +429,61 @@ impl PythonInteger {
     }
 }
 
+#[pyclass(name = "Rat")]
+#[derive(Clone)]
+pub struct PythonRational {
+    inner: Rational,
+}
+
+impl<'py> PythonCast<'py> for PythonRational {
+    fn cast_equiv(_obj: &Bound<'py, PyAny>) -> Option<Option<Self>> {
+        None
+    }
+
+    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
+        if let Ok(n) = PythonInteger::cast_subtype(obj) {
+            Some(Self {
+                inner: Rational::from(n.inner),
+            })
+        } else {
+            None
+        }
+    }
+}
+
+impl PythonStructure for PythonRational {
+    type Structure = RationalCanonicalStructure;
+
+    fn structure(&self) -> Self::Structure {
+        Rational::structure()
+    }
+
+    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+}
+
+impl_pymethods_eq!(PythonRational);
+impl_pymethods_pos!(PythonRational);
+impl_pymethods_add!(PythonRational);
+impl_pymethods_neg!(PythonRational);
+impl_pymethods_sub!(PythonRational);
+impl_pymethods_mul!(PythonRational);
+impl_pymethods_nat_pow!(PythonRational);
+
 #[pymethods]
 impl PythonRational {
     #[new]
     fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::frompy(obj)
+        Self::cast_subtype(obj)
     }
 
-    fn __int__(&self) -> BigInt {
-        todo!()
+    fn __int__(&self) -> PyResult<BigInt> {
+        if let Ok(n) = Integer::try_from(&self.inner) {
+            Ok(algebraeon_to_bignum_int(&n))
+        } else {
+            Err(PyValueError::new_err(""))
+        }
     }
 
     fn __str__(&self) -> String {
@@ -312,94 +493,4 @@ impl PythonRational {
     fn __repr__(&self) -> String {
         format!("Rat({})", self.inner)
     }
-}
-
-impl<T: Cast> Cast for Polynomial<T> {
-    fn frompy<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        let py = obj.py();
-        if let Ok(poly) = PythonPolynomial::py_new(obj) {
-            let mut coeffs = vec![];
-            for coeff in poly.inner {
-                if let Ok(coeff) = T::frompy(coeff.bind(py)) {
-                    coeffs.push(coeff);
-                } else {
-                    return Err(PyTypeError::new_err(format!(
-                        "Can't cast coefficient {}",
-                        coeff.bind(py).repr()?
-                    )));
-                }
-            }
-            Ok(Polynomial::from_coeffs(coeffs))
-        } else {
-            Err(PyTypeError::new_err(format!(
-                "Can't create a polynomial from `{}`",
-                obj.repr()?
-            )))
-        }
-    }
-}
-
-#[pyclass(name = "Poly")]
-#[derive(Debug, Clone)]
-pub struct PythonPolynomial {
-    inner: Vec<Py<PyAny>>,
-}
-
-impl<'py> PythonCast<'py> for PythonPolynomial {
-    fn zero() -> Option<Self> {
-        Some(Self { inner: vec![] })
-    }
-
-    fn frompy_eq_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(obj) = obj.extract::<Vec<Py<PyAny>>>() {
-            Ok(Self { inner: obj })
-        } else {
-            Err(PyTypeError::new_err(""))
-        }
-    }
-
-    fn frompy_lt_impl(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Ok(Self {
-            inner: vec![obj.clone().into()],
-        })
-    }
-
-    fn frompy_gt_impl(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
-    }
-}
-
-#[pymethods]
-impl PythonPolynomial {
-    #[new]
-    fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::frompy(obj)
-    }
-
-    fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-        Ok(format!("Poly({})", {
-            let mut coeffs = "".to_string();
-            coeffs += "[";
-            for i in 0..self.inner.len() {
-                if i != 0 {
-                    coeffs += ", ";
-                }
-                coeffs += self.inner[i].bind(py).repr()?.to_str()?;
-            }
-            coeffs += "]";
-            coeffs
-        }))
-    }
-
-    fn to_nat_poly(&self, py: Python<'_>) -> PyResult<PythonPolynomial> {
-        Ok(Self {
-            inner: Polynomial::<Natural>::frompy(self.clone().into_py_any(py)?.bind(py))?
-                .into_coeffs()
-                .into_iter()
-                .map(|c| PythonNatural { inner: c }.into_py_any(py))
-                .collect::<PyResult<_>>()?,
-        })
-    }
-
-    
 }
