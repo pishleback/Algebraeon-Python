@@ -144,12 +144,14 @@ jobs:
 
   sdist:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./algebraeon
     steps:
       - uses: actions/checkout@v4
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
-          path: algebraeon
           command: sdist
           args: --out dist
       - name: Upload sdist
