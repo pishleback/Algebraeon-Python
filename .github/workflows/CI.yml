@@ -37,6 +37,8 @@ jobs:
           - runner: ubuntu-22.04
             target: ppc64le
     steps:
+      - name: Install Linux Dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config build-essential
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -53,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
-          path: dist
+          path: algebraeon/dist
 
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
@@ -85,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
-          path: dist
+          path: algebraeon/dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -113,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-${{ matrix.platform.target }}
-          path: dist
+          path: algebraeon/dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -140,7 +142,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: dist
+          path: algebraeon/dist
 
   sdist:
     runs-on: ubuntu-latest
