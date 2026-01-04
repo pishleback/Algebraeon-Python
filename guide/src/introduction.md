@@ -11,11 +11,9 @@ The API is subject to large breaking changes at this time. I hope to stabilize t
 
 ## Links
 
-[Python module GitHub](https://github.com/pishleback/Algebraeon)
+[PyPI](https://pypi.org/project/algebraeon/)
 
-[Rust library GitHub](https://github.com/pishleback/Algebraeon)
+[GitHub](https://github.com/pishleback/Algebraeon)
 
-[User Guide for the Rust library](https://pishleback.github.io/Algebraeon/)
-
-[Crates.io for the Rust library](https://crates.io/crates/algebraeon)
+[Algebraeon as a Rust Library](https://pishleback.github.io/Algebraeon/)
 
