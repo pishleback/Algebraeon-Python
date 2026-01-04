@@ -71,4 +71,6 @@ from algebraeon import *
 assert(type(Nat(2) + Int(3)) is Int)
 
 assert(Int(4) + 5 == Rat(9))
+
+assert(Int(-3) ** 3 == -27)
 ```

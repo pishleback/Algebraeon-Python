@@ -1,6 +1,7 @@
 use ::algebraeon::rings::structure::AdditiveGroupSignature;
 use ::algebraeon::rings::structure::SemiRingSignature;
 use ::algebraeon::sets::structure::EqSignature;
+use ::algebraeon::sets::structure::OrdSignature;
 use ::algebraeon::{
     nzq::{
         Integer, IntegerCanonicalStructure, Natural, NaturalCanonicalStructure, Rational,
@@ -119,6 +120,36 @@ macro_rules! impl_pymethods_eq {
                         CompareOp::Lt | CompareOp::Le | CompareOp::Gt | CompareOp::Ge => {
                             Ok(py.NotImplemented())
                         }
+                    }
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_pymethods_cmp {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __richcmp__<'py>(
+                &self,
+                other: &Bound<'py, PyAny>,
+                op: CompareOp,
+            ) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                if let Ok(other) = Self::py_new(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    let cmp_result = structure.cmp(self.inner(), other.inner());
+                    match op {
+                        CompareOp::Eq => Ok(cmp_result.is_eq().into_py_any(py)?),
+                        CompareOp::Ne => Ok(cmp_result.is_ne().into_py_any(py)?),
+                        CompareOp::Lt => Ok(cmp_result.is_lt().into_py_any(py)?),
+                        CompareOp::Le => Ok(cmp_result.is_le().into_py_any(py)?),
+                        CompareOp::Gt => Ok(cmp_result.is_gt().into_py_any(py)?),
+                        CompareOp::Ge => Ok(cmp_result.is_ge().into_py_any(py)?),
                     }
                 } else {
                     Ok(py.NotImplemented())
@@ -401,7 +432,7 @@ impl PythonStructure for PythonInteger {
     }
 }
 
-impl_pymethods_eq!(PythonInteger);
+impl_pymethods_cmp!(PythonInteger);
 impl_pymethods_pos!(PythonInteger);
 impl_pymethods_add!(PythonInteger);
 impl_pymethods_neg!(PythonInteger);
@@ -463,7 +494,7 @@ impl PythonStructure for PythonRational {
     }
 }
 
-impl_pymethods_eq!(PythonRational);
+impl_pymethods_cmp!(PythonRational);
 impl_pymethods_pos!(PythonRational);
 impl_pymethods_add!(PythonRational);
 impl_pymethods_neg!(PythonRational);
