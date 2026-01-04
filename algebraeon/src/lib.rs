@@ -8,7 +8,7 @@ use ::algebraeon::{
         RationalCanonicalStructure,
     },
     rings::structure::AdditiveMonoidSignature,
-    sets::structure::{MetaType, SetSignature, Signature},
+    sets::structure::{MetaType, SetSignature},
 };
 use num_bigint::{BigInt, BigUint};
 use pyo3::basic::CompareOp;
@@ -28,6 +28,7 @@ fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
+#[allow(unused)]
 fn bignum_to_algebraeon_nat(x: &BigUint) -> Natural {
     // TODO: use a more efficient method
     use std::str::FromStr;
