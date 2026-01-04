@@ -97,18 +97,8 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
           before-script-linux: |
-            case "${{ matrix.platform.target }}" in
-              "aarch64" | "armv7")
-                # NOTE: pypa/manylinux docker images are Debian based
-                sudo apt-get update
-                sudo apt-get install -y pkg-config libssl-dev
-                ;;
-              "x86" | "x86_64")
-                # NOTE: rust-cross/manylinux docker images are CentOS based
-                yum update -y
-                yum install -y openssl openssl-devel
-                ;;
-            esac
+            sudo apt-get update
+            sudo apt-get install -y pkg-config libssl-dev
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
