@@ -3,7 +3,11 @@
 #
 #    maturin generate-ci github
 #
-name: CI
+# NOTE! I had to make some changes:
+# - Added the before-script-linux bits to install openssl in the various containers used for the cross-compilation for it to work.
+# - Added working-directory: algebraeon so that maturin runs in the correct place.
+
+name: maturin
 
 on:
   push:
