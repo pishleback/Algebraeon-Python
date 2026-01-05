@@ -12,9 +12,20 @@ fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<rational::PythonRational>()?;
     m.add_class::<natural_factored::PythonNaturalFactored>()?;
 
-    // m.add_function(wrap_pyfunction!(foo, m)?)?;
+    m.add_function(wrap_pyfunction!(algebraeon_rust_library_version, m)?)?;
+    m.add_function(wrap_pyfunction!(algebraeon_python_library_version, m)?)?;
 
     Ok(())
+}
+
+#[pyfunction]
+fn algebraeon_python_library_version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
+#[pyfunction]
+pub fn algebraeon_rust_library_version() -> &'static str {
+    include_str!(concat!(env!("OUT_DIR"), "/algebraeon_dep_version.rs"))
 }
 
 #[allow(unused)]

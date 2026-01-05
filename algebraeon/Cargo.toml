@@ -20,3 +20,6 @@ num-bigint = "0.4.6"
 
 [package.metadata.maturin]
 generate-typed-stubs = true
+
+[build-dependencies]
+cargo_metadata = "0.18"
