@@ -4,6 +4,8 @@ All notable changes to this project should be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1] - 2025-01-05
+
  - Implemented division for `Int` and `Rat`.
  - Can now construct a `Rat` from an instance of `fractions.Fraction`.
  - Added `NatFactored` for factorizations of natural numbers.
