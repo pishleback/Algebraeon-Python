@@ -44,11 +44,7 @@ fn algebraeon_to_bignum_int(x: &Integer) -> BigInt {
 
 trait PythonCast<'py>: Sized + for<'a> FromPyObject<'a, 'py> + PyTypeInfo {
     fn cast_exact(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(obj) = obj.extract::<Self>() {
-            Some(obj)
-        } else {
-            None
-        }
+        obj.extract::<Self>().ok()
     }
 
     fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self>;

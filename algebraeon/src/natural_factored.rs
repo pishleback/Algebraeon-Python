@@ -52,11 +52,7 @@ impl PythonNaturalFactored {
         match &self.inner {
             Some(factors) => {
                 if factors.len() == 1 {
-                    if factors[0].1 == Natural::ONE {
-                        true
-                    } else {
-                        false
-                    }
+                    factors[0].1 == Natural::ONE
                 } else {
                     false
                 }
@@ -91,7 +87,7 @@ impl PythonNaturalFactored {
                 py,
                 factors
                     .iter()
-                    .map(|(p, k)| {
+                    .flat_map(|(p, k)| {
                         let mut ps = vec![];
                         let mut k_count = Natural::ZERO;
                         while &k_count < k {
@@ -100,7 +96,6 @@ impl PythonNaturalFactored {
                         }
                         ps
                     })
-                    .flatten()
                     .collect::<Vec<_>>(),
             )
             .unwrap()

@@ -105,10 +105,10 @@ macro_rules! impl_pymethods_pos {
         #[pymethods]
         impl $python_type {
             fn __pos__<'py>(&self, py: Python<'py>) -> PyResult<Py<PyAny>> {
-                Ok(Self {
+                Self {
                     inner: self.inner().clone(),
                 }
-                .into_py_any(py)?)
+                .into_py_any(py)
             }
         }
     };
@@ -121,10 +121,10 @@ macro_rules! impl_pymethods_neg {
         impl $python_type {
             fn __neg__<'py>(&self, py: Python<'py>) -> PyResult<Py<PyAny>> {
                 use ::algebraeon::rings::structure::AdditiveGroupSignature;
-                Ok(Self {
+                Self {
                     inner: self.structure().neg(self.inner()),
                 }
-                .into_py_any(py)?)
+                .into_py_any(py)
             }
         }
     };
@@ -282,7 +282,7 @@ macro_rules! impl_pymethods_nat_pow {
                 other: &Bound<'py, PyAny>,
                 modulus: &Bound<'py, PyAny>,
             ) -> PyResult<Py<PyAny>> {
-                use crate::natural::PythonNatural;
+                use $crate::natural::PythonNatural;
                 use ::algebraeon::rings::structure::SemiRingSignature;
                 let py = other.py();
                 if !modulus.is_none() {
