@@ -81,5 +81,5 @@ jobs:
       working-directory: examples
 
     - name: Run tests in release
-      run: cargo run -- --release --dont-rebuild
+      run: cargo run -- --release
       working-directory: examples
