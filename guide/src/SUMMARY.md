@@ -1,4 +1,5 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [Number Types](./number_types.md)
+- [Numbers](./numbers.md)
+- [Factoring](./factoring.md)

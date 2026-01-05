@@ -1,8 +1,10 @@
-# Number Types
+# Numbers
+
+## Naturals, Integers, and Rationals
 
 Algebraeon provides `Nat`, `Int`, and `Rat` types for representing natural numbers, integers, and rational numbers respectively. 
 
-## Creating Numbers
+### Constructing Numbers
 
 The types can all be constructed using the primitive `int` type.
 
@@ -31,6 +33,16 @@ Int(7)
 Rat(-7)
 Rat(0)
 Rat(7)
+Rat(2, 3) # 2/3
+```
+
+Rational numbers can also be constructed from instaces of `Fraction` from the `fractions` module of the standard library.
+
+```python
+from algebraeon import *
+import fractions
+
+assert(Rat(fractions.Fraction(3, 5)) == Rat(3) / Rat(5))
 ```
 
 They can also be implicitly casted to larger sets, but not to smaller ones.
@@ -58,7 +70,7 @@ else:
     raise Exception()
 ```
 
-## Operations with Numbers
+### Operations
 
 The usual operations are defined for Algebraeon's number types. 
 
@@ -73,4 +85,31 @@ assert(type(Nat(2) + Int(3)) is Int)
 assert(Int(4) + 5 == Rat(9))
 
 assert(Int(-3) ** 3 == -27)
+```
+
+Division exampes:
+
+```python
+from algebraeon import *
+
+# Integer division is ok as long as the result is an integer.
+assert(Int(6) / Int(2) == 3)
+try:
+    Int(7) / Int(3)
+except ValueError:
+    pass
+else:
+    raise Exception()
+
+# Rational division is ok, as long as we're not dividing by 0.
+assert(Rat(6) / Rat(2) == 3)
+assert(Rat(7) / Rat(3) == Rat(7, 3))
+
+# Division by 0 raises a `ZeroDivisionError`.
+try:
+    Int(2) / Int(0)
+except ZeroDivisionError:
+    pass
+else:
+    raise Exception()
 ```
