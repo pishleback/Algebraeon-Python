@@ -60,7 +60,7 @@ jobs:
       run: cargo clippy -- -D warnings
       working-directory: algebraeon
 
-  test:
+  test_debug:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -79,6 +79,22 @@ jobs:
     - name: Run tests in debug
       run: cargo run
       working-directory: examples
+
+  test_release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Linux Dependencies
+      run: sudo apt update && sudo apt install libfontconfig1-dev
+
+    - name: Setup Python venv
+      run: |
+        python3 -m venv .env
+        source .env/bin/activate
+        pip install maturin
+      working-directory: algebraeon
 
     - name: Run tests in release
       run: cargo run -- --release
