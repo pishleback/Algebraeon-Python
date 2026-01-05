@@ -282,8 +282,8 @@ macro_rules! impl_pymethods_nat_pow {
                 other: &Bound<'py, PyAny>,
                 modulus: &Bound<'py, PyAny>,
             ) -> PyResult<Py<PyAny>> {
-                use $crate::natural::PythonNatural;
                 use ::algebraeon::rings::structure::SemiRingSignature;
+                use $crate::natural::PythonNatural;
                 let py = other.py();
                 if !modulus.is_none() {
                     Ok(py.NotImplemented())
