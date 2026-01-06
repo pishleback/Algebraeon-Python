@@ -15,7 +15,7 @@ pyo3 = { version = "0.27.0", features = [
     "py-clone",
     "multiple-pymethods",
 ] }
-algebraeon = "0.0.14"
+algebraeon = "0.0.15"
 num-bigint = "0.4.6"
 impls = "1.0.3"
 static_assertions = "1.1.0"
@@ -25,7 +25,3 @@ generate-typed-stubs = true
 
 [build-dependencies]
 cargo_metadata = "0.18"
-
-[dependencies.openssl-sys]
-version = "0.9"
-features = ["vendored"]
