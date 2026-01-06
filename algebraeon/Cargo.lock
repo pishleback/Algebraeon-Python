@@ -129,8 +129,10 @@ version = "0.0.1"
 dependencies = [
  "algebraeon",
  "cargo_metadata",
+ "impls",
  "num-bigint",
  "pyo3",
+ "static_assertions",
 ]
 
 [[package]]

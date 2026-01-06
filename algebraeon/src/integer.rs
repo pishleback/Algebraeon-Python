@@ -1,14 +1,18 @@
-use crate::PythonCast;
+use crate::PythonElement;
+use crate::PythonElementCast;
+use crate::PythonSet;
 use crate::PythonStructure;
 use crate::algebraeon_to_bignum_int;
 use crate::bignum_to_algebraeon_int;
 use crate::impl_pymethods_add;
 use crate::impl_pymethods_cmp;
 use crate::impl_pymethods_div;
+use crate::impl_pymethods_elem;
 use crate::impl_pymethods_mul;
 use crate::impl_pymethods_nat_pow;
 use crate::impl_pymethods_neg;
 use crate::impl_pymethods_pos;
+use crate::impl_pymethods_set;
 use crate::impl_pymethods_sub;
 use crate::natural::PythonNatural;
 use algebraeon::nzq::Integer;
@@ -21,13 +25,47 @@ use pyo3::exceptions::PyValueError;
 use pyo3::exceptions::PyZeroDivisionError;
 use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
 
-#[pyclass(name = "Int")]
-#[derive(Clone)]
+#[pyclass]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PythonIntegerSet {}
+
+impl PythonSet for PythonIntegerSet {
+    type Elem = PythonInteger;
+
+    fn str(&self) -> String {
+        "ℤ".to_string()
+    }
+
+    fn repr(&self) -> String {
+        "Int".to_string()
+    }
+}
+
+impl_pymethods_set!(PythonIntegerSet);
+
+#[pyclass]
+#[derive(Debug, Clone)]
 pub struct PythonInteger {
     inner: Integer,
 }
 
-impl<'py> PythonCast<'py> for PythonInteger {
+impl PythonElement for PythonInteger {
+    type Set = PythonIntegerSet;
+
+    fn set(&self) -> Self::Set {
+        PythonIntegerSet {}
+    }
+
+    fn str(&self) -> String {
+        format!("{}", self.inner)
+    }
+
+    fn repr(&self) -> String {
+        format!("Int({})", self.inner)
+    }
+}
+
+impl<'py> PythonElementCast<'py> for PythonInteger {
     fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
         if let Ok(n) = obj.extract::<BigInt>() {
             Ok(Self {
@@ -64,6 +102,7 @@ impl PythonStructure for PythonInteger {
     }
 }
 
+impl_pymethods_elem!(PythonInteger);
 impl_pymethods_cmp!(PythonInteger);
 impl_pymethods_pos!(PythonInteger);
 impl_pymethods_add!(PythonInteger);
@@ -82,13 +121,5 @@ impl PythonInteger {
 
     pub fn __int__(&self) -> BigInt {
         algebraeon_to_bignum_int(&self.inner)
-    }
-
-    pub fn __str__(&self) -> String {
-        format!("{}", self.inner)
-    }
-
-    pub fn __repr__(&self) -> String {
-        format!("Int({})", self.inner)
     }
 }

@@ -80,7 +80,7 @@ For operations involving more than one number, the type of the result is the lar
 from algebraeon import *
 
 # The type of the result is the largest of the input types.
-assert(type(Nat(2) + Int(3)) is Int)
+assert((Nat(2) + Int(3)).set() == Int)
 
 assert(Int(4) + 5 == Rat(9))
 

@@ -1,13 +1,17 @@
-use crate::PythonCast;
+use crate::PythonElement;
+use crate::PythonElementCast;
+use crate::PythonSet;
 use crate::PythonStructure;
 use crate::algebraeon_to_bignum_int;
 use crate::impl_pymethods_add;
 use crate::impl_pymethods_cmp;
 use crate::impl_pymethods_div;
+use crate::impl_pymethods_elem;
 use crate::impl_pymethods_mul;
 use crate::impl_pymethods_nat_pow;
 use crate::impl_pymethods_neg;
 use crate::impl_pymethods_pos;
+use crate::impl_pymethods_set;
 use crate::impl_pymethods_sub;
 use crate::integer::PythonInteger;
 use algebraeon::nzq::Integer;
@@ -21,13 +25,47 @@ use pyo3::exceptions::PyValueError;
 use pyo3::exceptions::PyZeroDivisionError;
 use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
 
-#[pyclass(name = "Rat")]
-#[derive(Clone)]
+#[pyclass]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PythonRationalSet {}
+
+impl PythonSet for PythonRationalSet {
+    type Elem = PythonRational;
+
+    fn str(&self) -> String {
+        "ℚ".to_string()
+    }
+
+    fn repr(&self) -> String {
+        "Rat".to_string()
+    }
+}
+
+impl_pymethods_set!(PythonRationalSet);
+
+#[pyclass]
+#[derive(Debug, Clone)]
 pub struct PythonRational {
     inner: Rational,
 }
 
-impl<'py> PythonCast<'py> for PythonRational {
+impl PythonElement for PythonRational {
+    type Set = PythonRationalSet;
+
+    fn set(&self) -> Self::Set {
+        PythonRationalSet {}
+    }
+
+    fn str(&self) -> String {
+        format!("{}", self.inner)
+    }
+
+    fn repr(&self) -> String {
+        format!("Rat({})", self.inner)
+    }
+}
+
+impl<'py> PythonElementCast<'py> for PythonRational {
     fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
         let py = obj.py();
         if obj
@@ -75,6 +113,7 @@ impl PythonStructure for PythonRational {
     }
 }
 
+impl_pymethods_elem!(PythonRational);
 impl_pymethods_cmp!(PythonRational);
 impl_pymethods_pos!(PythonRational);
 impl_pymethods_add!(PythonRational);
@@ -123,13 +162,5 @@ impl PythonRational {
         } else {
             Err(PyValueError::new_err(""))
         }
-    }
-
-    pub fn __str__(&self) -> String {
-        format!("{}", self.inner)
-    }
-
-    pub fn __repr__(&self) -> String {
-        format!("Rat({})", self.inner)
     }
 }

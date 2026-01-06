@@ -3,6 +3,15 @@
 ```python
 from algebraeon import *
 
+assert(Nat(3).set() == Nat)
+assert(Int(3).set() == Int)
+assert(Rat(3).set() == Rat)
+```
+
+
+```python
+from algebraeon import *
+
 Nat(3)
 
 Int(3)
@@ -168,4 +177,24 @@ assert(Nat(1).is_prime() == False)
 assert(Nat(2).is_prime() == True)
 assert(Nat(3).is_prime() == True)
 assert(Nat(4).is_prime() == False)
+```
+
+```python
+from algebraeon import *
+
+assert(str(Nat) == "ℕ")
+assert(repr(Nat) == "Nat")
+assert(str(Nat(3)) == "3")
+assert(repr(Nat(3)) == "Nat(3)")
+
+assert(str(Int) == "ℤ")
+assert(repr(Int) == "Int")
+assert(str(Int(3)) == "3")
+assert(repr(Int(3)) == "Int(3)")
+
+assert(str(Rat) == "ℚ")
+assert(repr(Rat) == "Rat")
+assert(str(Rat(3)) == "3")
+assert(str(Rat(2, 3)) == "2/3")
+assert(repr(Rat(3)) == "Rat(3)")
 ```

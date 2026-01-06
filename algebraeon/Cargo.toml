@@ -17,6 +17,8 @@ pyo3 = { version = "0.27.0", features = [
 ] }
 algebraeon = "0.0.14"
 num-bigint = "0.4.6"
+impls = "1.0.3"
+static_assertions = "1.1.0"
 
 [package.metadata.maturin]
 generate-typed-stubs = true
