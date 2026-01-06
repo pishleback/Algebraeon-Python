@@ -9,6 +9,21 @@ The Python library currently supports only a _very_ small subset of the capabili
  - [Published to PyPI](https://pypi.org/project/algebraeon/).
  - [GitHub for the Rust library](https://github.com/pishleback/Algebraeon).
 
+# Examples
+
+## Factoring
+
+```python
+from algebraeon import *
+
+# Algebraeon can factor numbers with much 
+# bigger prime factors than a naive algorithm is capable of.
+assert(
+    Nat(706000565581575429997696139445280900).factor().powers() 
+    == {2: 2, 5: 2, 6988699669998001: 1, 1010203040506070809: 1}
+)
+```
+
 # Development
 
 ## Running Tests

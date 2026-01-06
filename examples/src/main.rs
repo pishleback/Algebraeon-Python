@@ -2,7 +2,9 @@ use clap::Parser as ClapParser;
 use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag, TagEnd};
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::str::FromStr;
 use walkdir::WalkDir;
 
 fn extract_python_blocks(markdown: &str) -> Vec<String> {
@@ -97,19 +99,21 @@ fn main() {
         .unwrap();
     }
 
-    for entry in WalkDir::new("../guide/src") {
-        let entry = entry.unwrap();
+    for entry in WalkDir::new("../guide/src")
+        .into_iter()
+        .filter_map(|entry| {
+            let entry = entry.unwrap();
+            if entry.path().extension().and_then(|s| s.to_str()) != Some("md") {
+                None
+            } else {
+                Some(entry.into_path())
+            }
+        })
+        .chain([PathBuf::from_str("../README.md").unwrap()].into_iter())
+    {
+        println!("📄 Running blocks in `{}`", entry.to_str().unwrap());
 
-        if entry.path().extension().and_then(|s| s.to_str()) != Some("md") {
-            continue;
-        }
-
-        println!(
-            "📄 Running blocks in `{}`",
-            entry.file_name().to_str().unwrap()
-        );
-
-        let markdown = fs::read_to_string(entry.path()).unwrap();
+        let markdown = fs::read_to_string(entry).unwrap();
         let blocks = extract_python_blocks(&markdown);
 
         for (i, block) in blocks.iter().enumerate() {
