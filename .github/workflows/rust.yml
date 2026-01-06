@@ -16,14 +16,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: actions/setup-rust@v1
-      with:
-        rust-version: stable
-        components: rustfmt
-
     - name: Install Linux Dependencies
-      run: sudo apt update && sudo apt install libfontconfig1-dev
+      run: |
+        rustup update
+        sudo apt update && sudo apt install libfontconfig1-dev
 
     - name: Check Formatting
       run: cargo fmt --all -- --check
@@ -35,13 +31,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: actions/setup-rust@v1
-      with:
-        rust-version: stable
-
     - name: Install Linux Dependencies
-      run: sudo apt update && sudo apt install libfontconfig1-dev
+      run: |
+        rustup update
+        sudo apt update && sudo apt install libfontconfig1-dev
 
     - name: Run Code Debug Checks
       run: cargo check --all-targets --all-features
@@ -61,14 +54,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: actions/setup-rust@v1
-      with:
-        rust-version: stable
-        components: clippy
-
     - name: Install Linux Dependencies
-      run: sudo apt update && sudo apt install libfontconfig1-dev
+      run: |
+        rustup update
+        sudo apt update && sudo apt install libfontconfig1-dev
 
     - name: Install Clippy
       run: rustup component add clippy
