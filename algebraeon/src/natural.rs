@@ -95,6 +95,10 @@ impl PythonStructure for PythonNatural {
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
         &self.inner
     }
+
+    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
 }
 
 impl_pymethods_elem!(PythonNatural);
@@ -114,7 +118,7 @@ impl PythonNatural {
     pub fn __int__(&self) -> BigUint {
         algebraeon_to_bignum_nat(&self.inner)
     }
-    
+
     pub fn factor(&self) -> PythonNaturalFactored {
         PythonNaturalFactored::from_nat(&self.inner)
     }

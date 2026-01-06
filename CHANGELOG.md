@@ -4,6 +4,9 @@ All notable changes to this project should be documented in this file.
 
 ## [Unreleased]
 
+ - Added polynomials over `Rat`.
+ - Added polynomials over `Int`.
+
 ## [0.0.1] - 2025-01-05
 
  - Implemented division for `Int` and `Rat`.

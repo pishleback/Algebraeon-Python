@@ -100,6 +100,10 @@ impl PythonStructure for PythonInteger {
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
         &self.inner
     }
+
+    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
 }
 
 impl_pymethods_elem!(PythonInteger);

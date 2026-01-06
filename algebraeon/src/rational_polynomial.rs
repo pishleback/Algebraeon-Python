@@ -14,6 +14,7 @@ use crate::impl_pymethods_neg;
 use crate::impl_pymethods_pos;
 use crate::impl_pymethods_set;
 use crate::impl_pymethods_sub;
+use crate::integer_polynomial::PythonIntegerPolynomial;
 use crate::rational::PythonRational;
 use crate::rational::PythonRationalSet;
 use algebraeon::nzq::Rational;
@@ -101,6 +102,10 @@ impl<'py> PythonElementCast<'py> for PythonRationalPolynomial {
             Some(Self {
                 inner: Polynomial::constant(n.inner().clone()),
             })
+        } else if let Ok(p) = PythonIntegerPolynomial::cast_subtype(obj) {
+            Some(Self {
+                inner: p.into_inner().apply_map_into(Rational::from),
+            })
         } else {
             None
         }
@@ -116,6 +121,10 @@ impl PythonStructure for PythonRationalPolynomial {
 
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
         &self.inner
+    }
+
+    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
     }
 }
 

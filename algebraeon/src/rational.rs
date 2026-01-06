@@ -111,6 +111,10 @@ impl PythonStructure for PythonRational {
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
         &self.inner
     }
+
+    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
 }
 
 impl_pymethods_elem!(PythonRational);

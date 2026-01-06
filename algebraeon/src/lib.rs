@@ -207,6 +207,7 @@ trait PythonStructure: for<'py> PythonElementCast<'py> {
 
     fn structure(&self) -> Self::Structure;
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set;
+    fn into_inner(self) -> <Self::Structure as SetSignature>::Set;
 }
 
 #[macro_export]
@@ -579,6 +580,6 @@ pub mod integer;
 pub mod integer_polynomial;
 pub mod natural;
 pub mod natural_factored;
-pub mod natural_polynomial;
+// pub mod natural_polynomial;
 pub mod rational;
 pub mod rational_polynomial;
