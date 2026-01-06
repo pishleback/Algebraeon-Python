@@ -36,5 +36,5 @@ One time setup:
 4. Run `pip install maturin`. `maturin` is the tool used to build the Python module. Don't run `pip install algebraeon`; this venv is for installing the _locally_ built version of `algebraeon`, which is handled by `maturin`.
 
 To build the `algebraeon` Python module locally and run the tests in the User Guide against the local build:
-1. `cd` into `examples`.
+1. `cd` into `run_tests`.
 2. Run `cargo run`.
