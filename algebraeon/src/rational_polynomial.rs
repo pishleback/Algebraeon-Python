@@ -11,7 +11,7 @@ use algebraeon::nzq::Rational;
 use algebraeon::nzq::RationalCanonicalStructure;
 use algebraeon::rings::polynomial::Polynomial;
 use algebraeon::rings::polynomial::PolynomialStructure;
-use algebraeon::rings::polynomial::RingToPolynomialSignature;
+use algebraeon::rings::polynomial::ToPolynomialSignature;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
@@ -106,7 +106,7 @@ impl PythonStructure for PythonRationalPolynomial {
     type Structure = PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>;
 
     fn structure(&self) -> Self::Structure {
-        Rational::structure().into_polynomial_ring()
+        Rational::structure().into_polynomials()
     }
 
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set {

@@ -10,7 +10,7 @@ use algebraeon::nzq::Integer;
 use algebraeon::nzq::IntegerCanonicalStructure;
 use algebraeon::rings::polynomial::Polynomial;
 use algebraeon::rings::polynomial::PolynomialStructure;
-use algebraeon::rings::polynomial::RingToPolynomialSignature;
+use algebraeon::rings::polynomial::ToPolynomialSignature;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
@@ -101,7 +101,7 @@ impl PythonStructure for PythonIntegerPolynomial {
     type Structure = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
 
     fn structure(&self) -> Self::Structure {
-        Integer::structure().into_polynomial_ring()
+        Integer::structure().into_polynomials()
     }
 
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
