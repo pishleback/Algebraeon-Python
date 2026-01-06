@@ -24,6 +24,9 @@ assert(
 )
 ```
 
+## Further Examples
+Have a look in the `tests` folder for more example usage.
+
 # Development
 
 ## Running Tests
