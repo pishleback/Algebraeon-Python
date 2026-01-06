@@ -13,7 +13,7 @@ To check which version of [the Rust library for algebraeon](https://github.com/p
 
 ```python
 import algebraeon
-assert(algebraeon.algebraeon_rust_library_version() == "0.0.14")
+assert(algebraeon.algebraeon_rust_library_version() == "0.0.15")
 ```
 
 
