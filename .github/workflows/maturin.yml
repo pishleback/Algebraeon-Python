@@ -143,9 +143,9 @@ jobs:
       matrix:
         platform:
           - runner: macos-14
-            target: x86_64
+            target: x86_64-apple-darwin
           - runner: macos-14
-            target: aarch64
+            target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
