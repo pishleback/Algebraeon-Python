@@ -4,30 +4,16 @@ use crate::PythonPolynomialSet;
 use crate::PythonSet;
 use crate::PythonStructure;
 use crate::PythonToPolynomialSet;
-use crate::impl_pymethods_add;
-use crate::impl_pymethods_div;
-use crate::impl_pymethods_elem;
-use crate::impl_pymethods_eq;
-use crate::impl_pymethods_mul;
-use crate::impl_pymethods_nat_pow;
-use crate::impl_pymethods_neg;
-use crate::impl_pymethods_pos;
-use crate::impl_pymethods_set;
-use crate::impl_pymethods_sub;
 use crate::natural::PythonNatural;
 use crate::natural::PythonNaturalSet;
 use algebraeon::nzq::Natural;
 use algebraeon::nzq::NaturalCanonicalStructure;
 use algebraeon::rings::polynomial::Polynomial;
-use algebraeon::rings::polynomial::PolynomialSemiRingStructure;
 use algebraeon::rings::polynomial::PolynomialStructure;
-use algebraeon::rings::polynomial::RingToPolynomialSignature;
-use algebraeon::rings::polynomial::SemiRingToPolynomialSemiRingSignature;
+use algebraeon::rings::polynomial::ToPolynomialSignature;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
-use pyo3::exceptions::PyValueError;
-use pyo3::exceptions::PyZeroDivisionError;
 use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
 
 #[pyclass]
@@ -48,10 +34,10 @@ impl PythonSet for PythonNaturalPolynomialSet {
 
 impl PythonPolynomialSet for PythonNaturalPolynomialSet {
     fn var(&self) -> <Self as PythonSet>::Elem {
-        todo!()
-        // PythonNaturalPolynomial {
-        //     inner: Polynomial::var(),
-        // }
+        // todo: use Polynomial::var()
+        PythonNaturalPolynomial {
+            inner: Polynomial::from_coeffs(vec![Natural::ZERO, Natural::ONE]),
+        }
     }
 }
 
@@ -111,14 +97,18 @@ impl<'py> PythonElementCast<'py> for PythonNaturalPolynomial {
 }
 
 impl PythonStructure for PythonNaturalPolynomial {
-    type Structure = PolynomialSemiRingStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;
+    type Structure = PolynomialStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;
 
     fn structure(&self) -> Self::Structure {
-        Natural::structure().into_polynomial_semiring()
+        Natural::structure().into_polynomials()
     }
 
     fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
         &self.inner
+    }
+
+    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
     }
 }
 
