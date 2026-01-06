@@ -110,7 +110,7 @@ fn main() {
             }
         })
     {
-        println!("🔬 Running`{}`", entry.to_str().unwrap());
+        println!("🔬 Running test `{}`", entry.to_str().unwrap());
 
         run_and_stream(
             format!("source {venv_path} && python3 {}", entry.to_str().unwrap()).as_str(),
