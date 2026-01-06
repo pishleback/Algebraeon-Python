@@ -131,7 +131,7 @@ dependencies = [
  "cargo_metadata",
  "impls",
  "num-bigint",
- "openssl",
+ "openssl-sys",
  "pyo3",
  "static_assertions",
 ]
