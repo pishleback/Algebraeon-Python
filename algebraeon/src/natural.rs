@@ -98,6 +98,8 @@ impl_pymethods_elem!(PythonNatural);
 impl_pymethods_eq!(PythonNatural);
 impl_pymethods_pos!(PythonNatural);
 impl_pymethods_add!(PythonNatural);
+impl_pymethods_try_neg!(PythonNatural);
+impl_pymethods_try_sub!(PythonNatural);
 impl_pymethods_mul!(PythonNatural);
 impl_pymethods_nat_pow!(PythonNatural);
 

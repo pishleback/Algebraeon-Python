@@ -1,9 +1,8 @@
+use crate::algebraeon_to_bignum_nat;
 use algebraeon::nzq::Natural;
 use algebraeon::rings::natural::NaturalFns;
 use pyo3::types::{PyDict, PyList};
 use pyo3::{IntoPyObjectExt, prelude::*};
-
-use crate::algebraeon_to_bignum_nat;
 
 #[pyclass(name = "NatFactored")]
 #[derive(Clone)]

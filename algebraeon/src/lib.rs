@@ -414,6 +414,75 @@ macro_rules! impl_pymethods_sub {
 }
 
 #[macro_export]
+macro_rules! impl_pymethods_try_neg {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __neg__<'py>(&self, py: Python<'py>) -> PyResult<Py<PyAny>> {
+                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
+                static_assertions::const_assert!(
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                );
+                if let Some(inner) = self.structure().try_neg(self.inner()) {
+                    Self { inner }.into_py_any(py)
+                } else {
+                    Err(PyValueError::new_err(""))
+                }
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! impl_pymethods_try_sub {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __sub__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
+                static_assertions::const_assert!(
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                );
+                let py = other.py();
+                if let Ok(other) = Self::cast_subtype(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    if let Some(inner) = structure.try_sub(self.inner(), other.inner()) {
+                        Ok(Self { inner }.into_py_any(py)?)
+                    } else {
+                        Err(PyValueError::new_err(""))
+                    }
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
+
+            fn __rsub__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
+                static_assertions::const_assert!(
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                );
+                let py = other.py();
+                if let Ok(other) = Self::cast_subtype(other) {
+                    let structure = self.structure();
+                    debug_assert_eq!(structure, other.structure());
+                    if let Some(inner) = structure.try_sub(other.inner(), self.inner()) {
+                        Ok(Self { inner }.into_py_any(py)?)
+                    } else {
+                        Err(PyValueError::new_err(""))
+                    }
+                } else {
+                    Ok(py.NotImplemented())
+                }
+            }
+        }
+    }
+}
+
+#[macro_export]
 macro_rules! impl_pymethods_mul {
     ($python_type:ident) => {
         #[pymethods]
