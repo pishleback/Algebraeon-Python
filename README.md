@@ -25,7 +25,7 @@ assert(
 ```
 
 ## Further Examples
-Have a look in the `tests` folder for more example usage.
+The `tests` folder has more examples.
 
 # Development
 
