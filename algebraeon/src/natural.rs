@@ -4,7 +4,6 @@ use crate::PythonSet;
 use crate::PythonStructure;
 use crate::algebraeon_to_bignum_nat;
 use crate::bignum_to_algebraeon_int;
-use crate::natural_factored::PythonNaturalFactored;
 use ::algebraeon::nzq::Natural;
 use ::algebraeon::nzq::NaturalCanonicalStructure;
 use algebraeon::sets::structure::MetaType;
@@ -35,7 +34,7 @@ impl_pymethods_set!(PythonNaturalSet);
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct PythonNatural {
-    inner: Natural,
+    pub inner: Natural,
 }
 
 impl PythonElement for PythonNatural {
@@ -112,13 +111,5 @@ impl PythonNatural {
 
     pub fn __int__(&self) -> BigUint {
         algebraeon_to_bignum_nat(&self.inner)
-    }
-
-    pub fn factor(&self) -> PythonNaturalFactored {
-        PythonNaturalFactored::from_nat(&self.inner)
-    }
-
-    pub fn is_prime(&self) -> bool {
-        self.factor().is_prime()
     }
 }

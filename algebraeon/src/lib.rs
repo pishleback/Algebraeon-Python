@@ -626,6 +626,7 @@ macro_rules! impl_pymethods_nat_pow {
 }
 
 pub mod integer;
+pub mod integer_factored;
 pub mod integer_polynomial;
 pub mod natural;
 pub mod natural_factored;

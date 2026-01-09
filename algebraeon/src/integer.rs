@@ -35,7 +35,7 @@ impl_pymethods_set!(PythonIntegerSet);
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct PythonInteger {
-    inner: Integer,
+    pub inner: Integer,
 }
 
 impl PythonElement for PythonInteger {
