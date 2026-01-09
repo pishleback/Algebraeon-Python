@@ -54,10 +54,10 @@ impl PythonToPolynomialSet for PythonIntegerSet {
 
 impl_pymethods_to_polynomial_set!(PythonIntegerSet);
 
-#[pyclass]
+#[pyclass()]
 #[derive(Debug, Clone)]
 pub struct PythonIntegerPolynomial {
-    inner: Polynomial<Integer>,
+    pub inner: Polynomial<Integer>,
 }
 
 impl PythonElement for PythonIntegerPolynomial {

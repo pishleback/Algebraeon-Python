@@ -1,7 +1,8 @@
 use crate::algebraeon_to_bignum_nat;
 use crate::natural::PythonNatural;
 use algebraeon::nzq::Natural;
-use algebraeon::rings::structure::{Factored, MetaFactoringMonoid};
+use algebraeon::rings::structure::{Factored, MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
+use algebraeon::sets::structure::MetaType;
 use pyo3::types::{PyDict, PyList};
 use pyo3::{IntoPyObjectExt, prelude::*};
 
@@ -59,15 +60,9 @@ impl PythonNaturalFactored {
     }
 
     pub fn is_prime(&self) -> bool {
-        if let Some(factors) = self.inner.powers() {
-            if factors.len() == 1 {
-                factors[0].1 == Natural::ONE
-            } else {
-                false
-            }
-        } else {
-            false
-        }
+        Natural::structure()
+            .factorizations()
+            .is_irreducible(&self.inner)
     }
 
     /// A dict of the prime factors pointing at their non-zero powers.
