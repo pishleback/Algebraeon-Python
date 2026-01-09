@@ -25,7 +25,7 @@ assert(Int(3) * Int(5) == 15)
 assert(Int(12) / Int(4) == 3)
 try:
     Int(12) / Int(0) == 3
-except ZeroDivisionError:
+except ValueError:
     pass
 except:
     raise Exception()

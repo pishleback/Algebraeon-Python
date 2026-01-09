@@ -1,13 +1,13 @@
 use crate::algebraeon_to_bignum_nat;
 use algebraeon::nzq::Natural;
-use algebraeon::rings::natural::NaturalFns;
+use algebraeon::rings::structure::{Factored, MetaFactoringMonoid};
 use pyo3::types::{PyDict, PyList};
 use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass(name = "NatFactored")]
 #[derive(Clone)]
 pub struct PythonNaturalFactored {
-    inner: Option<Vec<(Natural, Natural)>>,
+    inner: Factored<Natural, Natural>,
 }
 
 impl PythonNaturalFactored {
@@ -21,25 +21,24 @@ impl PythonNaturalFactored {
 #[pymethods]
 impl PythonNaturalFactored {
     pub fn __str__(&self) -> String {
-        match &self.inner {
-            Some(factors) => {
-                if factors.is_empty() {
-                    "1".to_string()
-                } else {
-                    factors
-                        .iter()
-                        .map(|(p, k)| {
-                            if k == &Natural::ONE {
-                                format!("{p}")
-                            } else {
-                                format!("{p}^{k}")
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                        .join(" × ")
-                }
+        if let Some(powers) = self.inner.powers() {
+            if powers.is_empty() {
+                "1".to_string()
+            } else {
+                powers
+                    .iter()
+                    .map(|(p, k)| {
+                        if k == &Natural::ONE {
+                            format!("{p}")
+                        } else {
+                            format!("{p}^{k}")
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" × ")
             }
-            None => "0".to_string(),
+        } else {
+            "0".to_string()
         }
     }
 
@@ -48,15 +47,14 @@ impl PythonNaturalFactored {
     }
 
     pub fn is_prime(&self) -> bool {
-        match &self.inner {
-            Some(factors) => {
-                if factors.len() == 1 {
-                    factors[0].1 == Natural::ONE
-                } else {
-                    false
-                }
+        if let Some(factors) = self.inner.powers() {
+            if factors.len() == 1 {
+                factors[0].1 == Natural::ONE
+            } else {
+                false
             }
-            None => false,
+        } else {
+            false
         }
     }
 
@@ -64,16 +62,15 @@ impl PythonNaturalFactored {
     ///
     /// None if 0
     pub fn powers<'py>(&self, py: Python<'py>) -> Py<PyAny> {
-        match &self.inner {
-            Some(factors) => {
-                let dict = PyDict::new(py);
-                for (p, k) in factors {
-                    dict.set_item(algebraeon_to_bignum_nat(p), algebraeon_to_bignum_nat(k))
-                        .unwrap();
-                }
-                dict.into_py_any(py).unwrap()
+        if let Some(factors) = self.inner.powers() {
+            let dict = PyDict::new(py);
+            for (p, k) in factors {
+                dict.set_item(algebraeon_to_bignum_nat(p), algebraeon_to_bignum_nat(k))
+                    .unwrap();
             }
-            None => py.None(),
+            dict.into_py_any(py).unwrap()
+        } else {
+            py.None()
         }
     }
 
@@ -81,8 +78,8 @@ impl PythonNaturalFactored {
     ///
     /// None if 0
     pub fn primes<'py>(&self, py: Python<'py>) -> Py<PyAny> {
-        match &self.inner {
-            Some(factors) => PyList::new(
+        if let Some(factors) = self.inner.powers() {
+            PyList::new(
                 py,
                 factors
                     .iter()
@@ -99,8 +96,9 @@ impl PythonNaturalFactored {
             )
             .unwrap()
             .into_py_any(py)
-            .unwrap(),
-            None => py.None(),
+            .unwrap()
+        } else {
+            py.None()
         }
     }
 
@@ -108,8 +106,8 @@ impl PythonNaturalFactored {
     ///
     /// None if 0
     pub fn distinct_primes<'py>(&self, py: Python<'py>) -> Py<PyAny> {
-        match &self.inner {
-            Some(factors) => PyList::new(
+        if let Some(factors) = self.inner.powers() {
+            PyList::new(
                 py,
                 factors
                     .iter()
@@ -118,8 +116,9 @@ impl PythonNaturalFactored {
             )
             .unwrap()
             .into_py_any(py)
-            .unwrap(),
-            None => py.None(),
+            .unwrap()
+        } else {
+            py.None()
         }
     }
 }

@@ -105,10 +105,10 @@ else:
 assert(Rat(6) / Rat(2) == 3)
 assert(Rat(7) / Rat(3) == Rat(7, 3))
 
-# Division by 0 raises a `ZeroDivisionError`.
+# Division by 0 raises a `ValueError`.
 try:
     Int(2) / Int(0)
-except ZeroDivisionError:
+except ValueError:
     pass
 else:
     raise Exception()

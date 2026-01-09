@@ -34,7 +34,7 @@ assert(Rat(3) * Rat(5) == 15)
 assert(Rat(12) / Rat(4) == 3)
 try:
     Rat(12) / Rat(0) == 3
-except ZeroDivisionError:
+except ValueError:
     pass
 except:
     raise Exception()
