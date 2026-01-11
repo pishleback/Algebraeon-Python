@@ -114,23 +114,3 @@ Output:
     .primitive()             = 1 * (λ-2) * (λ-3)
 """
 ```
-
-A high-degree example
-
-```python
-from algebraeon import *
-
-x = Int.polynomials().var()
-
-poly = x**120 - 1
-poly_factored = poly.factor()
-
-print(f"poly                     =", poly)
-print(f"poly_factored            =", poly_factored)
-
-"""
-Output:
-    poly                     = λ^120-1
-    poly_factored            = 1 * (λ-1) * (λ+1) * (λ^2+1) * (λ^4-λ^3+λ^2-λ+1) * (λ^4+λ^3+λ^2+λ+1) * (λ^2-λ+1) * (λ^2+λ+1) * (λ^4-λ^2+1) * (λ^4+1) * (λ^8-λ^7+λ^5-λ^4+λ^3-λ+1) * (λ^8+λ^7-λ^5-λ^4-λ^3+λ+1) * (λ^8-λ^6+λ^4-λ^2+1) * (λ^8-λ^4+1) * (λ^16-λ^12+λ^8-λ^4+1) * (λ^16+λ^14-λ^10-λ^8-λ^6+λ^2+1) * (λ^32+λ^28-λ^20-λ^16-λ^12+λ^4+1)
-"""
-```
