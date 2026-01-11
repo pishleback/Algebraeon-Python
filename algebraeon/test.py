@@ -5,7 +5,7 @@ from algebraeon import *
 
 x = Int.polynomials().var()
 
-f = -12 * (x ** 6 - 1)
+f = -360 * (x+1)**100 * (x**120 - 1)
 
 print(f)
 
