@@ -80,3 +80,57 @@ assert(Int(2).is_prime())
 assert(Int(3).is_prime())
 assert(not Int(4).is_prime())
 ```
+
+## Integer Polynomials
+```python
+from algebraeon import *
+
+x = Int.polynomials().var()
+
+poly = -12 * x**2 + 60*x - 72
+poly_factored = poly.factor()
+
+print(f"poly                     =", poly)
+print(f"poly_factored            =", poly_factored)
+# A list of the irreducible factors with their multiplicity
+print(f".powers()                =", poly_factored.powers())
+# A list of the irreducible factors with repetitions
+print(f".irreducibles()          =", poly_factored.irreducibles())
+# A list of the irreducible factors without repetitions
+print(f".distinct_irreducibles() =", poly_factored.distinct_irreducibles())
+# The integer part of the factorisation
+print(f".content()               =", poly_factored.content())
+# The primitive polynomial part of the factorisation
+print(f".primitive()             =", poly_factored.primitive())
+
+"""
+Output:
+    poly                     = -12λ^2+60λ-72
+    poly_factored            = -1 * (2)^2 * (3) * (λ-2) * (λ-3)
+    .powers()                = [(Polynomial(2, Int), 2), (Polynomial(3, Int), 1), (Polynomial(λ-2, Int), 1), (Polynomial(λ-3, Int), 1)]
+    .irreducibles()          = [Polynomial(2, Int), Polynomial(2, Int), Polynomial(3, Int), Polynomial(λ-2, Int), Polynomial(λ-3, Int)]
+    .distinct_irreducibles() = [Polynomial(2, Int), Polynomial(3, Int), Polynomial(λ-2, Int), Polynomial(λ-3, Int)]
+    .content()               = - 2^2 × 3
+    .primitive()             = 1 * (λ-2) * (λ-3)
+"""
+```
+
+A high-degree example
+
+```python
+from algebraeon import *
+
+x = Int.polynomials().var()
+
+poly = x**120 - 1
+poly_factored = poly.factor()
+
+print(f"poly                     =", poly)
+print(f"poly_factored            =", poly_factored)
+
+"""
+Output:
+    poly                     = λ^120-1
+    poly_factored            = 1 * (λ-1) * (λ+1) * (λ^2+1) * (λ^4-λ^3+λ^2-λ+1) * (λ^4+λ^3+λ^2+λ+1) * (λ^2-λ+1) * (λ^2+λ+1) * (λ^4-λ^2+1) * (λ^4+1) * (λ^8-λ^7+λ^5-λ^4+λ^3-λ+1) * (λ^8+λ^7-λ^5-λ^4-λ^3+λ+1) * (λ^8-λ^6+λ^4-λ^2+1) * (λ^8-λ^4+1) * (λ^16-λ^12+λ^8-λ^4+1) * (λ^16+λ^14-λ^10-λ^8-λ^6+λ^2+1) * (λ^32+λ^28-λ^20-λ^16-λ^12+λ^4+1)
+"""
+```

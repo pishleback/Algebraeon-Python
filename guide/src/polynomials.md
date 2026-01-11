@@ -34,7 +34,7 @@ assert((x**2 + 3*x + 2) / (x + 1) == x + 2)
 assert(x / (2 * x) == Rat(1, 2))
 ```
 
-## Natural Number Polynomials
+## Polynomials Over the Natural Numbers
 
 ```python
 from algebraeon import *
