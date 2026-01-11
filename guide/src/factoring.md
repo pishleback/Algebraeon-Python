@@ -49,7 +49,7 @@ Factoring integers:
 ```python
 from algebraeon import *
 
-assert(Int(12).factor().sign()             == 1)
+assert(Int(12).factor().sign()            == 1)
 assert(Int(12).factor().primes()          == [2, 2, 3])
 assert(Int(12).factor().distinct_primes() == [2, 3])
 assert(Int(12).factor().powers()          == {2 : 2, 3 : 1})
