@@ -43,8 +43,6 @@ dependencies = [
 [[package]]
 name = "algebraeon"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ed227fd3c020901da4cd0a0469f3a71a420f6279efdb72e19731755a273983d"
 dependencies = [
  "algebraeon-drawing",
  "algebraeon-geometry",
@@ -57,8 +55,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-drawing"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3a853af4fdfdfc9d3eed0a13585dd8a26cbd7ad32f17447b97ad89243983807"
 dependencies = [
  "algebraeon-geometry",
  "algebraeon-nzq",
@@ -76,8 +72,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-geometry"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2196478525158ec46a538277e7494ff27541c17025a775dcaf35c9651b6afad5"
 dependencies = [
  "algebraeon-nzq",
  "algebraeon-rings",
@@ -91,8 +85,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-groups"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "499540c1bcf0ace226fea01de35da3c49047264fa076a94e756a4a4e99ac585c"
 dependencies = [
  "algebraeon-macros",
  "algebraeon-nzq",
@@ -104,8 +96,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-macros"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b756f774bc84588e2c7feff3ba879695f93418bdb1731bbd0eada4f0bd0484a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -115,8 +105,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-nzq"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f95fab2792d8239cbaba8f8bb9edd24de382a76ebdf9cc3da70d6250994a941"
 dependencies = [
  "algebraeon-sets",
  "malachite-base",
@@ -139,8 +127,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-rings"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1f4d0c0d408912408ec868512e16c5a7a08a2a0888837949cd2f8d39007e89e"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-macros",
@@ -158,8 +144,6 @@ dependencies = [
 [[package]]
 name = "algebraeon-sets"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c249a27ef196b4ceb504c275afb3a498986121e65805cec16a8e69655b0e4efc"
 dependencies = [
  "algebraeon-macros",
  "indexmap",
