@@ -3,6 +3,7 @@ use ::algebraeon::{
     sets::structure::SetSignature,
 };
 use num_bigint::{BigInt, BigUint};
+
 use pyo3::{PyTypeInfo, prelude::*};
 
 #[pymodule]
@@ -287,10 +288,10 @@ macro_rules! impl_pymethods_add {
         #[pymethods]
         impl $python_type {
             fn __add__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                use ::algebraeon::rings::structure::AdditionSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditionSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
@@ -306,10 +307,10 @@ macro_rules! impl_pymethods_add {
             }
 
             fn __radd__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                use ::algebraeon::rings::structure::AdditionSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditionSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
@@ -419,10 +420,10 @@ macro_rules! impl_pymethods_try_neg {
         #[pymethods]
         impl $python_type {
             fn __neg__<'py>(&self, py: Python<'py>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                use ::algebraeon::rings::structure::TryNegateSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : TryNegateSignature)
                 );
                 if let Some(inner) = self.structure().try_neg(self.inner()) {
                     Self { inner }.into_py_any(py)
@@ -440,10 +441,10 @@ macro_rules! impl_pymethods_try_sub {
         #[pymethods]
         impl $python_type {
             fn __sub__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                use ::algebraeon::rings::structure::CancellativeAdditionSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeAdditionSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
@@ -460,10 +461,10 @@ macro_rules! impl_pymethods_try_sub {
             }
 
             fn __rsub__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::AdditiveMonoidSignature;
+                use ::algebraeon::rings::structure::CancellativeAdditionSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveMonoidSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeAdditionSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
@@ -488,10 +489,10 @@ macro_rules! impl_pymethods_mul {
         #[pymethods]
         impl $python_type {
             fn __mul__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::SemiRingSignature;
+                use ::algebraeon::rings::structure::MultiplicationSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : SemiRingSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : MultiplicationSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
@@ -499,18 +500,17 @@ macro_rules! impl_pymethods_mul {
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
                         inner: structure.mul(self.inner(), other.inner()),
-                    }
-                    .into_py_any(py)?)
+                    }.into_py_any(py)?)
                 } else {
                     Ok(py.NotImplemented())
                 }
             }
 
             fn __rmul__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::SemiRingSignature;
+                use ::algebraeon::rings::structure::MultiplicationSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : SemiRingSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : MultiplicationSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
@@ -518,8 +518,7 @@ macro_rules! impl_pymethods_mul {
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
                         inner: structure.mul(other.inner(), self.inner()),
-                    }
-                    .into_py_any(py)?)
+                    }.into_py_any(py)?)
                 } else {
                     Ok(py.NotImplemented())
                 }
@@ -534,32 +533,23 @@ macro_rules! impl_pymethods_div {
         #[pymethods]
         impl $python_type {
             fn __truediv__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::IntegralDomainSignature;
-                use ::algebraeon::rings::structure::RingDivisionError;
+                use ::algebraeon::rings::structure::CancellativeMultiplicationSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : IntegralDomainSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeMultiplicationSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
-                    match structure.div(self.inner(), other.inner()) {
-                        Ok(result) => Ok(Self { inner: result }.into_py_any(py)?),
-                        Err(e) => match e {
-                            RingDivisionError::DivideByZero => {
-                                Err(PyZeroDivisionError::new_err(format!(
-                                    "when dividing `{}` by `{}`",
-                                    self.__repr__(),
-                                    other.__repr__()
-                                )))
-                            }
-                            RingDivisionError::NotDivisible => Err(PyValueError::new_err(format!(
+                    match structure.try_divide(self.inner(), other.inner()) {
+                        Some(result) => Ok(Self { inner: result }.into_py_any(py)?),
+                        None => Err(PyValueError::new_err(format!(
                                 "`{}` is not divisible by `{}`",
                                 self.__repr__(),
                                 other.__repr__()
-                            ))),
-                        },
+                            ))
+                        ),
                     }
                 } else {
                     Ok(py.NotImplemented())
@@ -567,32 +557,22 @@ macro_rules! impl_pymethods_div {
             }
 
             fn __rtruediv__<'py>(&self, other: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::IntegralDomainSignature;
-                use ::algebraeon::rings::structure::RingDivisionError;
+                use ::algebraeon::rings::structure::CancellativeMultiplicationSignature;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : IntegralDomainSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeMultiplicationSignature)
                 );
                 let py = other.py();
                 if let Ok(other) = Self::cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
-                    match structure.div(other.inner(), self.inner()) {
-                        Ok(result) => Ok(Self { inner: result }.into_py_any(py)?),
-                        Err(e) => match e {
-                            RingDivisionError::DivideByZero => {
-                                Err(PyZeroDivisionError::new_err(format!(
-                                    "when dividing `{}` by `{}`",
-                                    self.__repr__(),
-                                    other.__repr__()
-                                )))
-                            }
-                            RingDivisionError::NotDivisible => Err(PyValueError::new_err(format!(
+                    match structure.try_divide(other.inner(), self.inner()) {
+                        Some(result) => Ok(Self { inner: result }.into_py_any(py)?),
+                        None => Err(PyValueError::new_err(format!(
                                 "`{}` is not divisible by `{}`",
                                 self.__repr__(),
                                 other.__repr__()
                             ))),
-                        },
                     }
                 } else {
                     Ok(py.NotImplemented())
@@ -612,11 +592,11 @@ macro_rules! impl_pymethods_nat_pow {
                 other: &Bound<'py, PyAny>,
                 modulus: &Bound<'py, PyAny>,
             ) -> PyResult<Py<PyAny>> {
-                use ::algebraeon::rings::structure::SemiRingSignature;
+                use ::algebraeon::rings::structure::MultiplicativeMonoidSignature;
                 use $crate::natural::PythonNatural;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonStructure));
                 static_assertions::const_assert!(
-                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : SemiRingSignature)
+                    impls::impls!(<$python_type as $crate::PythonStructure>::Structure : MultiplicativeMonoidSignature)
                 );
                 let py = other.py();
                 if !modulus.is_none() {
@@ -646,7 +626,9 @@ macro_rules! impl_pymethods_nat_pow {
 }
 
 pub mod integer;
+pub mod integer_factored;
 pub mod integer_polynomial;
+pub mod integer_polynomial_factored;
 pub mod natural;
 pub mod natural_factored;
 pub mod natural_polynomial;

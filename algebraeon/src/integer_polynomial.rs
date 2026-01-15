@@ -15,7 +15,6 @@ use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::exceptions::PyZeroDivisionError;
 use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
 
 #[pyclass]
@@ -55,10 +54,10 @@ impl PythonToPolynomialSet for PythonIntegerSet {
 
 impl_pymethods_to_polynomial_set!(PythonIntegerSet);
 
-#[pyclass]
+#[pyclass()]
 #[derive(Debug, Clone)]
 pub struct PythonIntegerPolynomial {
-    inner: Polynomial<Integer>,
+    pub inner: Polynomial<Integer>,
 }
 
 impl PythonElement for PythonIntegerPolynomial {

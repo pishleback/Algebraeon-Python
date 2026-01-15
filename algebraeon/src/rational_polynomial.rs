@@ -16,7 +16,6 @@ use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::exceptions::PyZeroDivisionError;
 use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
 
 #[pyclass]

@@ -12,7 +12,6 @@ use algebraeon::sets::structure::SetSignature;
 use num_bigint::BigInt;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::exceptions::PyZeroDivisionError;
 use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
 
 #[pyclass]
@@ -36,7 +35,7 @@ impl_pymethods_set!(PythonIntegerSet);
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct PythonInteger {
-    inner: Integer,
+    pub inner: Integer,
 }
 
 impl PythonElement for PythonInteger {

@@ -1,15 +1,17 @@
-use crate::algebraeon_to_bignum_nat;
-use crate::natural::PythonNatural;
-use algebraeon::nzq::Natural;
-use algebraeon::rings::structure::{Factored, MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
+use crate::integer::PythonInteger;
+use crate::{algebraeon_to_bignum_int, algebraeon_to_bignum_nat};
+use algebraeon::nzq::{Integer, Natural};
+use algebraeon::rings::structure::{
+    Factored, MetaFactoringMonoid, UniqueFactorizationMonoidSignature,
+};
 use algebraeon::sets::structure::MetaType;
 use pyo3::types::{PyDict, PyList};
 use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pymethods]
-impl PythonNatural {
-    pub fn factor(&self) -> PythonNaturalFactored {
-        PythonNaturalFactored::from_nat(&self.inner)
+impl PythonInteger {
+    pub fn factor(&self) -> PythonIntegerFactored {
+        PythonIntegerFactored::from_int(&self.inner)
     }
 
     pub fn is_prime(&self) -> bool {
@@ -17,14 +19,14 @@ impl PythonNatural {
     }
 }
 
-#[pyclass(name = "NatFactored")]
+#[pyclass(name = "IntFactored")]
 #[derive(Clone)]
-pub struct PythonNaturalFactored {
-    inner: Factored<Natural, Natural>,
+pub struct PythonIntegerFactored {
+    pub inner: Factored<Integer, Natural>,
 }
 
-impl PythonNaturalFactored {
-    pub fn from_nat(n: &Natural) -> Self {
+impl PythonIntegerFactored {
+    pub fn from_int(n: &Integer) -> Self {
         Self {
             inner: n.clone().factor(),
         }
@@ -32,10 +34,10 @@ impl PythonNaturalFactored {
 }
 
 #[pymethods]
-impl PythonNaturalFactored {
+impl PythonIntegerFactored {
     pub fn __str__(&self) -> String {
-        if let Some(powers) = self.inner.powers() {
-            if powers.is_empty() {
+        if let Some((unit, powers)) = self.inner.unit_and_powers() {
+            let s = if powers.is_empty() {
                 "1".to_string()
             } else {
                 powers
@@ -49,6 +51,13 @@ impl PythonNaturalFactored {
                     })
                     .collect::<Vec<_>>()
                     .join(" × ")
+            };
+            if *unit == Integer::ONE {
+                s
+            } else if -unit == Integer::ONE {
+                format!("- {s}")
+            } else {
+                unreachable!()
             }
         } else {
             "0".to_string()
@@ -60,7 +69,7 @@ impl PythonNaturalFactored {
     }
 
     pub fn is_prime(&self) -> bool {
-        Natural::structure()
+        Integer::structure()
             .factorizations()
             .is_irreducible(&self.inner)
     }
@@ -72,7 +81,7 @@ impl PythonNaturalFactored {
         if let Some(factors) = self.inner.powers() {
             let dict = PyDict::new(py);
             for (p, k) in factors {
-                dict.set_item(algebraeon_to_bignum_nat(p), algebraeon_to_bignum_nat(k))
+                dict.set_item(algebraeon_to_bignum_int(p), algebraeon_to_bignum_nat(k))
                     .unwrap();
             }
             dict.into_py_any(py).unwrap()
@@ -94,7 +103,7 @@ impl PythonNaturalFactored {
                         let mut ps = vec![];
                         let mut k_count = Natural::ZERO;
                         while &k_count < k {
-                            ps.push(algebraeon_to_bignum_nat(p));
+                            ps.push(algebraeon_to_bignum_int(p));
                             k_count += Natural::ONE;
                         }
                         ps
@@ -118,7 +127,7 @@ impl PythonNaturalFactored {
                 py,
                 factors
                     .iter()
-                    .map(|(p, _)| algebraeon_to_bignum_nat(p))
+                    .map(|(p, _)| algebraeon_to_bignum_int(p))
                     .collect::<Vec<_>>(),
             )
             .unwrap()
@@ -126,6 +135,20 @@ impl PythonNaturalFactored {
             .unwrap()
         } else {
             py.None()
+        }
+    }
+
+    /// The sign, either -1, 0, or 1
+    pub fn sign(&self) -> PythonInteger {
+        match &self.inner {
+            Factored::Zero => PythonInteger {
+                inner: Integer::ZERO,
+            },
+            Factored::NonZero(nz) => {
+                let u = nz.unit();
+                debug_assert!(*u == Integer::ONE || *u == -Integer::ONE);
+                PythonInteger { inner: u.clone() }
+            }
         }
     }
 }
