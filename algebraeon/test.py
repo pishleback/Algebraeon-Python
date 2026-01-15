@@ -2,7 +2,7 @@ from algebraeon import *
 
 x = Int.polynomials().var()
 
-poly = x**120 - 1
+poly = x**12 - 1
 poly_factored = poly.factor()
 
 print(f"poly          =", poly)
