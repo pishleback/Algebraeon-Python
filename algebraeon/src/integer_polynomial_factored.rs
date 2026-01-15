@@ -4,7 +4,7 @@ use crate::{PythonStructure, algebraeon_to_bignum_nat};
 use algebraeon::nzq::{Integer, Natural};
 use algebraeon::rings::polynomial::{Polynomial, ToPolynomialSignature};
 use algebraeon::rings::structure::{
-    Factored, MetaCharZeroRingSignature, MetaFactoringMonoid, UniqueFactorizationMonoidSignature
+    Factored, MetaCharZeroRingSignature, MetaFactoringMonoid, UniqueFactorizationMonoidSignature,
 };
 use algebraeon::sets::structure::MetaType;
 use pyo3::types::PyList;
