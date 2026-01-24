@@ -4,8 +4,7 @@ use crate::PythonPolynomialSet;
 use crate::PythonSet;
 use crate::PythonStructure;
 use crate::PythonToPolynomialSet;
-use crate::integer_polynomial::PythonIntegerPolynomial;
-use crate::rational::PythonRational;
+use crate::integer_polynomial::PythonIntegerPolynomialSet;
 use crate::rational::PythonRationalSet;
 use algebraeon::nzq::Rational;
 use algebraeon::nzq::RationalCanonicalStructure;
@@ -81,18 +80,18 @@ impl PythonElement for PythonRationalPolynomial {
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonRationalPolynomial {
-    fn cast_equiv(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'py> PythonElementCast<'py> for PythonRationalPolynomialSet {
+    fn cast_equiv(&self, _obj: &Bound<'py, PyAny>) -> PyResult<PythonRationalPolynomial> {
         Err(PyTypeError::new_err(""))
     }
 
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(n) = PythonRational::cast_subtype(obj) {
-            Some(Self {
+    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonRationalPolynomial> {
+        if let Ok(n) = PythonRationalSet::default().cast_subtype(obj) {
+            Some(PythonRationalPolynomial {
                 inner: Polynomial::constant(n.inner().clone()),
             })
-        } else if let Ok(p) = PythonIntegerPolynomial::cast_subtype(obj) {
-            Some(Self {
+        } else if let Ok(p) = PythonIntegerPolynomialSet::default().cast_subtype(obj) {
+            Some(PythonRationalPolynomial {
                 inner: p.into_inner().apply_map_into(Rational::from),
             })
         } else {
@@ -131,6 +130,6 @@ impl_pymethods_nat_pow!(PythonRationalPolynomial);
 impl PythonRationalPolynomial {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::cast_subtype(obj)
+        PythonRationalPolynomialSet::default().cast_subtype(obj)
     }
 }

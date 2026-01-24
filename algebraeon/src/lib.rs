@@ -69,6 +69,29 @@ pub trait PythonSet: PartialEq + Eq {
     fn repr(&self) -> String;
 }
 
+pub trait PythonElementCast<'py>: PythonSet
+where
+    Self::Elem: Sized + for<'a> FromPyObject<'a, 'py> + PyTypeInfo,
+{
+    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
+        obj.extract::<Self::Elem>().ok()
+    }
+
+    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<Self::Elem>;
+
+    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem>;
+
+    fn cast_subtype(&self, obj: &Bound<'py, PyAny>) -> PyResult<Self::Elem> {
+        if let Some(obj) = self.cast_exact(obj) {
+            Ok(obj)
+        } else if let Some(obj) = self.cast_proper_subtype(obj) {
+            Ok(obj)
+        } else {
+            self.cast_equiv(obj)
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! impl_pymethods_set {
     ($python_type:ident) => {
@@ -183,27 +206,7 @@ macro_rules! impl_pymethods_elem {
     };
 }
 
-trait PythonElementCast<'py>: Sized + for<'a> FromPyObject<'a, 'py> + PyTypeInfo {
-    fn cast_exact(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        obj.extract::<Self>().ok()
-    }
-
-    fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self>;
-
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self>;
-
-    fn cast_subtype(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Some(obj) = Self::cast_exact(obj) {
-            Ok(obj)
-        } else if let Some(obj) = Self::cast_proper_subtype(obj) {
-            Ok(obj)
-        } else {
-            Self::cast_equiv(obj)
-        }
-    }
-}
-
-trait PythonStructure: for<'py> PythonElementCast<'py> {
+trait PythonStructure {
     type Structure: SetSignature;
 
     fn structure(&self) -> Self::Structure;
@@ -227,7 +230,7 @@ macro_rules! impl_pymethods_eq {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : EqSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     let eq_result = structure.equal(self.inner(), other.inner());
@@ -262,7 +265,7 @@ macro_rules! impl_pymethods_cmp {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : OrdSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     let cmp_result = structure.cmp(self.inner(), other.inner());
@@ -294,7 +297,7 @@ macro_rules! impl_pymethods_add {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditionSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
@@ -313,7 +316,7 @@ macro_rules! impl_pymethods_add {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditionSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
@@ -380,7 +383,7 @@ macro_rules! impl_pymethods_sub {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveGroupSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
@@ -399,7 +402,7 @@ macro_rules! impl_pymethods_sub {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : AdditiveGroupSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
@@ -447,7 +450,7 @@ macro_rules! impl_pymethods_try_sub {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeAdditionSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     if let Some(inner) = structure.try_sub(self.inner(), other.inner()) {
@@ -467,7 +470,7 @@ macro_rules! impl_pymethods_try_sub {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeAdditionSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     if let Some(inner) = structure.try_sub(other.inner(), self.inner()) {
@@ -495,7 +498,7 @@ macro_rules! impl_pymethods_mul {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : MultiplicationSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
@@ -513,7 +516,7 @@ macro_rules! impl_pymethods_mul {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : MultiplicationSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(Self {
@@ -539,7 +542,7 @@ macro_rules! impl_pymethods_div {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeMultiplicationSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     match structure.try_divide(self.inner(), other.inner()) {
@@ -563,7 +566,7 @@ macro_rules! impl_pymethods_div {
                     impls::impls!(<$python_type as $crate::PythonStructure>::Structure : CancellativeMultiplicationSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = Self::cast_subtype(other) {
+                if let Ok(other) = self.set().cast_subtype(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     match structure.try_divide(other.inner(), self.inner()) {
@@ -627,6 +630,7 @@ macro_rules! impl_pymethods_nat_pow {
 
 pub mod integer;
 pub mod integer_factored;
+// pub mod integer_modulo;
 pub mod integer_polynomial;
 pub mod integer_polynomial_factored;
 pub mod natural;

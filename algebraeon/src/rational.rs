@@ -4,6 +4,7 @@ use crate::PythonSet;
 use crate::PythonStructure;
 use crate::algebraeon_to_bignum_int;
 use crate::integer::PythonInteger;
+use crate::integer::PythonIntegerSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::Rational;
 use algebraeon::nzq::RationalCanonicalStructure;
@@ -54,14 +55,14 @@ impl PythonElement for PythonRational {
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonRational {
-    fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'py> PythonElementCast<'py> for PythonRationalSet {
+    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonRational> {
         let py = obj.py();
         if obj
             .get_type()
             .is(py.import("fractions")?.getattr("Fraction")?)
         {
-            Ok(Self {
+            Ok(PythonRational {
                 inner: Rational::from_integers(
                     PythonInteger::py_new(&obj.getattr("numerator").unwrap())
                         .unwrap()
@@ -79,9 +80,9 @@ impl<'py> PythonElementCast<'py> for PythonRational {
         }
     }
 
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(n) = PythonInteger::cast_subtype(obj) {
-            Some(Self {
+    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonRational> {
+        if let Ok(n) = PythonIntegerSet::default().cast_subtype(obj) {
+            Some(PythonRational {
                 inner: Rational::from(n.inner()),
             })
         } else {
@@ -145,7 +146,7 @@ impl PythonRational {
                 )))
             }
         } else {
-            Self::cast_subtype(obj1)
+            PythonRationalSet::default().cast_subtype(obj1)
         }
     }
 

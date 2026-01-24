@@ -4,7 +4,6 @@ use crate::PythonPolynomialSet;
 use crate::PythonSet;
 use crate::PythonStructure;
 use crate::PythonToPolynomialSet;
-use crate::integer::PythonInteger;
 use crate::integer::PythonIntegerSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::IntegerCanonicalStructure;
@@ -80,14 +79,14 @@ impl PythonElement for PythonIntegerPolynomial {
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonIntegerPolynomial {
-    fn cast_equiv(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'py> PythonElementCast<'py> for PythonIntegerPolynomialSet {
+    fn cast_equiv(&self, _obj: &Bound<'py, PyAny>) -> PyResult<PythonIntegerPolynomial> {
         Err(PyTypeError::new_err(""))
     }
 
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(n) = PythonInteger::cast_subtype(obj) {
-            Some(Self {
+    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonIntegerPolynomial> {
+        if let Ok(n) = PythonIntegerSet::default().cast_subtype(obj) {
+            Some(PythonIntegerPolynomial {
                 inner: Polynomial::constant(n.inner().clone()),
             })
         } else {
@@ -126,6 +125,6 @@ impl_pymethods_nat_pow!(PythonIntegerPolynomial);
 impl PythonIntegerPolynomial {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::cast_subtype(obj)
+        PythonIntegerPolynomialSet::default().cast_subtype(obj)
     }
 }

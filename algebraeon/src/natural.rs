@@ -53,11 +53,11 @@ impl PythonElement for PythonNatural {
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonNatural {
-    fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'py> PythonElementCast<'py> for PythonNaturalSet {
+    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonNatural> {
         if let Ok(n) = obj.extract::<BigInt>() {
             if let Ok(n) = Natural::try_from(bignum_to_algebraeon_int(&n)) {
-                Ok(Self { inner: n })
+                Ok(PythonNatural { inner: n })
             } else {
                 Err(PyValueError::new_err(format!(
                     "Can't create a `Nat` from `{}`",
@@ -72,7 +72,7 @@ impl<'py> PythonElementCast<'py> for PythonNatural {
         }
     }
 
-    fn cast_proper_subtype(_obj: &Bound<'py, PyAny>) -> Option<Self> {
+    fn cast_proper_subtype(&self, _obj: &Bound<'py, PyAny>) -> Option<PythonNatural> {
         None
     }
 }
@@ -106,7 +106,7 @@ impl_pymethods_nat_pow!(PythonNatural);
 impl PythonNatural {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::cast_subtype(obj)
+        PythonNaturalSet::default().cast_subtype(obj)
     }
 
     pub fn __int__(&self) -> BigUint {

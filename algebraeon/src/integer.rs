@@ -4,7 +4,7 @@ use crate::PythonSet;
 use crate::PythonStructure;
 use crate::algebraeon_to_bignum_int;
 use crate::bignum_to_algebraeon_int;
-use crate::natural::PythonNatural;
+use crate::natural::PythonNaturalSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::IntegerCanonicalStructure;
 use algebraeon::sets::structure::MetaType;
@@ -54,10 +54,10 @@ impl PythonElement for PythonInteger {
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonInteger {
-    fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'py> PythonElementCast<'py> for PythonIntegerSet {
+    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonInteger> {
         if let Ok(n) = obj.extract::<BigInt>() {
-            Ok(Self {
+            Ok(PythonInteger {
                 inner: bignum_to_algebraeon_int(&n),
             })
         } else {
@@ -68,9 +68,9 @@ impl<'py> PythonElementCast<'py> for PythonInteger {
         }
     }
 
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(n) = PythonNatural::cast_subtype(obj) {
-            Some(Self {
+    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonInteger> {
+        if let Ok(n) = PythonNaturalSet::default().cast_subtype(obj) {
+            Some(PythonInteger {
                 inner: Integer::from(n.inner()),
             })
         } else {
@@ -109,7 +109,7 @@ impl_pymethods_nat_pow!(PythonInteger);
 impl PythonInteger {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::cast_subtype(obj)
+        PythonIntegerSet::default().cast_subtype(obj)
     }
 
     pub fn __int__(&self) -> BigInt {
