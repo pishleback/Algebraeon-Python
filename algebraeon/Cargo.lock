@@ -114,7 +114,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-python"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "algebraeon",
  "cargo_metadata",

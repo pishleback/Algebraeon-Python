@@ -65,7 +65,7 @@ impl PythonIntegerFactored {
     }
 
     pub fn __repr__(&self) -> String {
-        format!("NatFactored({})", self.__str__())
+        format!("IntFactored({})", self.__str__())
     }
 
     pub fn is_prime(&self) -> bool {

@@ -99,17 +99,14 @@ fn main() {
         .unwrap();
     }
 
-    for entry in WalkDir::new("../tests")
-        .into_iter()
-        .filter_map(|entry| {
-            let entry = entry.unwrap();
-            if entry.path().extension().and_then(|s| s.to_str()) != Some("py") {
-                None
-            } else {
-                Some(entry.into_path())
-            }
-        })
-    {
+    for entry in WalkDir::new("../tests").into_iter().filter_map(|entry| {
+        let entry = entry.unwrap();
+        if entry.path().extension().and_then(|s| s.to_str()) != Some("py") {
+            None
+        } else {
+            Some(entry.into_path())
+        }
+    }) {
         println!("🔬 Running test `{}`", entry.to_str().unwrap());
 
         run_and_stream(
