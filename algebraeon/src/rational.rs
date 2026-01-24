@@ -1,7 +1,6 @@
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::algebraeon_to_bignum_int;
 use crate::integer::PythonInteger;
 use crate::integer::PythonIntegerSet;
@@ -21,6 +20,10 @@ pub struct PythonRationalSet {}
 
 impl PythonSet for PythonRationalSet {
     type Elem = PythonRational;
+
+    fn from_elem(&self, elem: Rational) -> Self::Elem {
+        PythonRational { inner: elem }
+    }
 
     fn str(&self) -> String {
         "ℚ".to_string()
@@ -42,6 +45,20 @@ pub struct PythonRational {
 impl PythonElement for PythonRational {
     type Set = PythonRationalSet;
 
+    type Structure = RationalCanonicalStructure;
+
+    fn structure(&self) -> Self::Structure {
+        Rational::structure()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
+
     fn set(&self) -> Self::Set {
         PythonRationalSet {}
     }
@@ -56,6 +73,10 @@ impl PythonElement for PythonRational {
 }
 
 impl<'py> PythonElementCast<'py> for PythonRationalSet {
+    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
+        obj.extract::<Self::Elem>().ok()
+    }
+
     fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonRational> {
         let py = obj.py();
         if obj
@@ -66,10 +87,10 @@ impl<'py> PythonElementCast<'py> for PythonRationalSet {
                 inner: Rational::from_integers(
                     PythonInteger::py_new(&obj.getattr("numerator").unwrap())
                         .unwrap()
-                        .inner(),
+                        .to_elem(),
                     PythonInteger::py_new(&obj.getattr("denominator").unwrap())
                         .unwrap()
-                        .inner(),
+                        .to_elem(),
                 ),
             })
         } else {
@@ -83,27 +104,11 @@ impl<'py> PythonElementCast<'py> for PythonRationalSet {
     fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonRational> {
         if let Ok(n) = PythonIntegerSet::default().cast_subtype(obj) {
             Some(PythonRational {
-                inner: Rational::from(n.inner()),
+                inner: Rational::from(n.to_elem()),
             })
         } else {
             None
         }
-    }
-}
-
-impl PythonStructure for PythonRational {
-    type Structure = RationalCanonicalStructure;
-
-    fn structure(&self) -> Self::Structure {
-        Rational::structure()
-    }
-
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
-    }
-
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
     }
 }
 

@@ -1,7 +1,6 @@
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::algebraeon_to_bignum_nat;
 use crate::bignum_to_algebraeon_int;
 use ::algebraeon::nzq::Natural;
@@ -19,6 +18,10 @@ pub struct PythonNaturalSet {}
 
 impl PythonSet for PythonNaturalSet {
     type Elem = PythonNatural;
+
+    fn from_elem(&self, elem: Natural) -> Self::Elem {
+        PythonNatural { inner: elem }
+    }
 
     fn str(&self) -> String {
         "ℕ".to_string()
@@ -40,6 +43,20 @@ pub struct PythonNatural {
 impl PythonElement for PythonNatural {
     type Set = PythonNaturalSet;
 
+    type Structure = NaturalCanonicalStructure;
+
+    fn structure(&self) -> Self::Structure {
+        Natural::structure()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
+
     fn set(&self) -> Self::Set {
         PythonNaturalSet {}
     }
@@ -54,6 +71,10 @@ impl PythonElement for PythonNatural {
 }
 
 impl<'py> PythonElementCast<'py> for PythonNaturalSet {
+    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
+        obj.extract::<Self::Elem>().ok()
+    }
+
     fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonNatural> {
         if let Ok(n) = obj.extract::<BigInt>() {
             if let Ok(n) = Natural::try_from(bignum_to_algebraeon_int(&n)) {
@@ -74,22 +95,6 @@ impl<'py> PythonElementCast<'py> for PythonNaturalSet {
 
     fn cast_proper_subtype(&self, _obj: &Bound<'py, PyAny>) -> Option<PythonNatural> {
         None
-    }
-}
-
-impl PythonStructure for PythonNatural {
-    type Structure = NaturalCanonicalStructure;
-
-    fn structure(&self) -> Self::Structure {
-        Natural::structure()
-    }
-
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
-    }
-
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
     }
 }
 

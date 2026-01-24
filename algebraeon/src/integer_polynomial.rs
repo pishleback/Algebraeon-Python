@@ -2,7 +2,6 @@ use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonPolynomialSet;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::PythonToPolynomialSet;
 use crate::integer::PythonIntegerSet;
 use algebraeon::nzq::Integer;
@@ -22,6 +21,10 @@ pub struct PythonIntegerPolynomialSet {}
 
 impl PythonSet for PythonIntegerPolynomialSet {
     type Elem = PythonIntegerPolynomial;
+
+    fn from_elem(&self, elem: Polynomial<Integer>) -> Self::Elem {
+        PythonIntegerPolynomial { inner: elem }
+    }
 
     fn str(&self) -> String {
         format!("{}[λ]", PythonIntegerSet::default().str())
@@ -62,6 +65,20 @@ pub struct PythonIntegerPolynomial {
 impl PythonElement for PythonIntegerPolynomial {
     type Set = PythonIntegerPolynomialSet;
 
+    type Structure = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
+
+    fn structure(&self) -> Self::Structure {
+        Integer::structure().into_polynomials()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
+
     fn set(&self) -> Self::Set {
         PythonIntegerPolynomialSet {}
     }
@@ -80,6 +97,10 @@ impl PythonElement for PythonIntegerPolynomial {
 }
 
 impl<'py> PythonElementCast<'py> for PythonIntegerPolynomialSet {
+    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
+        obj.extract::<Self::Elem>().ok()
+    }
+
     fn cast_equiv(&self, _obj: &Bound<'py, PyAny>) -> PyResult<PythonIntegerPolynomial> {
         Err(PyTypeError::new_err(""))
     }
@@ -87,27 +108,11 @@ impl<'py> PythonElementCast<'py> for PythonIntegerPolynomialSet {
     fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonIntegerPolynomial> {
         if let Ok(n) = PythonIntegerSet::default().cast_subtype(obj) {
             Some(PythonIntegerPolynomial {
-                inner: Polynomial::constant(n.inner().clone()),
+                inner: Polynomial::constant(n.to_elem().clone()),
             })
         } else {
             None
         }
-    }
-}
-
-impl PythonStructure for PythonIntegerPolynomial {
-    type Structure = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
-
-    fn structure(&self) -> Self::Structure {
-        Integer::structure().into_polynomials()
-    }
-
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
-    }
-
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
     }
 }
 

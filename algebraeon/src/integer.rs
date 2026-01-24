@@ -1,7 +1,6 @@
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::algebraeon_to_bignum_int;
 use crate::bignum_to_algebraeon_int;
 use crate::natural::PythonNaturalSet;
@@ -20,6 +19,10 @@ pub struct PythonIntegerSet {}
 
 impl PythonSet for PythonIntegerSet {
     type Elem = PythonInteger;
+
+    fn from_elem(&self, elem: Integer) -> Self::Elem {
+        PythonInteger { inner: elem }
+    }
 
     fn str(&self) -> String {
         "ℤ".to_string()
@@ -41,6 +44,20 @@ pub struct PythonInteger {
 impl PythonElement for PythonInteger {
     type Set = PythonIntegerSet;
 
+    type Structure = IntegerCanonicalStructure;
+
+    fn structure(&self) -> Self::Structure {
+        Integer::structure()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
+
     fn set(&self) -> Self::Set {
         PythonIntegerSet {}
     }
@@ -55,6 +72,10 @@ impl PythonElement for PythonInteger {
 }
 
 impl<'py> PythonElementCast<'py> for PythonIntegerSet {
+    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
+        obj.extract::<Self::Elem>().ok()
+    }
+
     fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonInteger> {
         if let Ok(n) = obj.extract::<BigInt>() {
             Ok(PythonInteger {
@@ -71,27 +92,11 @@ impl<'py> PythonElementCast<'py> for PythonIntegerSet {
     fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonInteger> {
         if let Ok(n) = PythonNaturalSet::default().cast_subtype(obj) {
             Some(PythonInteger {
-                inner: Integer::from(n.inner()),
+                inner: Integer::from(n.to_elem()),
             })
         } else {
             None
         }
-    }
-}
-
-impl PythonStructure for PythonInteger {
-    type Structure = IntegerCanonicalStructure;
-
-    fn structure(&self) -> Self::Structure {
-        Integer::structure()
-    }
-
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
-    }
-
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
     }
 }
 

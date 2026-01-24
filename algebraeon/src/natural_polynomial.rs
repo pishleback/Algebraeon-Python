@@ -2,7 +2,6 @@ use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonPolynomialSet;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::PythonToPolynomialSet;
 use crate::natural::PythonNaturalSet;
 use algebraeon::nzq::Natural;
@@ -21,6 +20,10 @@ pub struct PythonNaturalPolynomialSet {}
 
 impl PythonSet for PythonNaturalPolynomialSet {
     type Elem = PythonNaturalPolynomial;
+
+    fn from_elem(&self, elem: Polynomial<Natural>) -> Self::Elem {
+        PythonNaturalPolynomial { inner: elem }
+    }
 
     fn str(&self) -> String {
         format!("{}[λ]", PythonNaturalSet::default().str())
@@ -62,6 +65,20 @@ pub struct PythonNaturalPolynomial {
 impl PythonElement for PythonNaturalPolynomial {
     type Set = PythonNaturalPolynomialSet;
 
+    type Structure = PolynomialStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;
+
+    fn structure(&self) -> Self::Structure {
+        Natural::structure().into_polynomials()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
+
     fn set(&self) -> Self::Set {
         PythonNaturalPolynomialSet {}
     }
@@ -80,6 +97,10 @@ impl PythonElement for PythonNaturalPolynomial {
 }
 
 impl<'py> PythonElementCast<'py> for PythonNaturalPolynomialSet {
+    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
+        obj.extract::<Self::Elem>().ok()
+    }
+
     fn cast_equiv(&self, _obj: &Bound<'py, PyAny>) -> PyResult<PythonNaturalPolynomial> {
         Err(PyTypeError::new_err(""))
     }
@@ -87,27 +108,11 @@ impl<'py> PythonElementCast<'py> for PythonNaturalPolynomialSet {
     fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonNaturalPolynomial> {
         if let Ok(n) = PythonNaturalSet::default().cast_subtype(obj) {
             Some(PythonNaturalPolynomial {
-                inner: Polynomial::constant(n.inner().clone()),
+                inner: Polynomial::constant(n.to_elem().clone()),
             })
         } else {
             None
         }
-    }
-}
-
-impl PythonStructure for PythonNaturalPolynomial {
-    type Structure = PolynomialStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>;
-
-    fn structure(&self) -> Self::Structure {
-        Natural::structure().into_polynomials()
-    }
-
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
-    }
-
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
     }
 }
 
