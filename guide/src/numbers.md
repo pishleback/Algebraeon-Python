@@ -129,7 +129,30 @@ assert(mod10(8) * mod10(9) == mod10(2))
 assert(mod10(3) ** 555     == mod10(7))
 ```
 
-Automatic casting example
+Modular inverses
+
+```python
+from algebraeon import *
+
+# 3 * 21 = 1 mod 31
+mod31 = Int.mod(31)
+assert(mod31(3) ** -1 == mod31(21))
+
+# 5 * 13 = 1 mod 16
+mod16 = Int.mod(16)
+assert(mod16(5) ** -1 == mod16(13))
+
+# 4 has no inverse mod 12
+mod12 = Int.mod(12)
+try:
+    mod12(4) ** -1
+except ValueError:
+    pass
+else:
+    raise Exception()
+```
+
+Automatic casting between moduli.
 
 ```python
 from algebraeon import *
