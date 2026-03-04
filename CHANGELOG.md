@@ -5,6 +5,7 @@ All notable changes to this project should be documented in this file.
 ## [Unreleased]
 
  - Allow explicitly converting from a larger set to a smaller set.
+ - Added `RealAlg` for real algebraic numbers.
 
 ## [0.0.2] - 2026-01-15
 

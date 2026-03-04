@@ -3,14 +3,11 @@ use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::integer::PythonIntegerSet;
-use crate::natural::PythonNatural;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::IntegerCanonicalStructure;
 use algebraeon::nzq::Natural;
 use algebraeon::rings::structure::EuclideanRemainderQuotientStructure;
 use algebraeon::rings::structure::MetaEuclideanDivisionSignature;
-use algebraeon::rings::structure::MultiplicativeMonoidSignature;
-use algebraeon::rings::structure::MultiplicativeMonoidTryInverseSignature;
 use algebraeon::rings::structure::RingToQuotientFieldSignature;
 use algebraeon::rings::structure::RingToQuotientRingSignature;
 use algebraeon::sets::structure::MetaType;
@@ -173,48 +170,49 @@ impl_pymethods_add!(PythonIntegerModulo);
 impl_pymethods_neg!(PythonIntegerModulo);
 impl_pymethods_sub!(PythonIntegerModulo);
 impl_pymethods_mul!(PythonIntegerModulo);
+impl_pymethods_int_pow!(PythonIntegerModulo);
 
-#[pymethods]
-impl PythonIntegerModulo {
-    fn __pow__<'py>(
-        &self,
-        other: &Bound<'py, PyAny>,
-        modulus: &Bound<'py, PyAny>,
-    ) -> PyResult<Py<PyAny>> {
-        let py = other.py();
-        let set = self.set();
-        if !modulus.is_none() {
-            Ok(py.NotImplemented())
-        } else if let Ok(other) = PythonNatural::py_new(other) {
-            set.from_elem(
-                self.ring_structure()
-                    .nat_pow(self.to_elem(), other.to_elem()),
-            )
-            .into_py_any(py)
-        } else if let Ok(other) = PythonIntegerSet::default().implicit_cast(other) {
-            if let Some(repr) = self
-                .ring_structure()
-                .try_int_pow(self.to_elem(), other.to_elem())
-            {
-                set.from_elem(repr).into_py_any(py)
-            } else {
-                Err(PyValueError::new_err(format!(
-                    "Cannot invert `{}` as it is not coprime to the modulus `{}`",
-                    self.to_elem(),
-                    other.to_elem()
-                )))
-            }
-        } else {
-            Ok(py.NotImplemented())
-        }
-    }
+// #[pymethods]
+// impl PythonIntegerModulo {
+//     fn __pow__<'py>(
+//         &self,
+//         other: &Bound<'py, PyAny>,
+//         modulus: &Bound<'py, PyAny>,
+//     ) -> PyResult<Py<PyAny>> {
+//         let py = other.py();
+//         let set = self.set();
+//         if !modulus.is_none() {
+//             Ok(py.NotImplemented())
+//         } else if let Ok(other) = PythonNatural::py_new(other) {
+//             set.from_elem(
+//                 self.ring_structure()
+//                     .nat_pow(self.to_elem(), other.to_elem()),
+//             )
+//             .into_py_any(py)
+//         } else if let Ok(other) = PythonIntegerSet::default().implicit_cast(other) {
+//             if let Some(repr) = self
+//                 .ring_structure()
+//                 .try_int_pow(self.to_elem(), other.to_elem())
+//             {
+//                 set.from_elem(repr).into_py_any(py)
+//             } else {
+//                 Err(PyValueError::new_err(format!(
+//                     "Cannot invert `{}` as it is not coprime to the modulus `{}`",
+//                     self.to_elem(),
+//                     other.to_elem()
+//                 )))
+//             }
+//         } else {
+//             Ok(py.NotImplemented())
+//         }
+//     }
 
-    fn __rpow__<'py>(
-        &self,
-        other: &Bound<'py, PyAny>,
-        _modulus: &Bound<'py, PyAny>,
-    ) -> PyResult<Py<PyAny>> {
-        let py = other.py();
-        Ok(py.NotImplemented())
-    }
-}
+//     fn __rpow__<'py>(
+//         &self,
+//         other: &Bound<'py, PyAny>,
+//         _modulus: &Bound<'py, PyAny>,
+//     ) -> PyResult<Py<PyAny>> {
+//         let py = other.py();
+//         Ok(py.NotImplemented())
+//     }
+// }

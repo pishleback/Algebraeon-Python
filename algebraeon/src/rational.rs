@@ -4,9 +4,11 @@ use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::algebraeon_to_bignum_int;
 use crate::integer::PythonIntegerSet;
+use crate::real_algebraic::PythonRealAlgebraicSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::Rational;
 use algebraeon::nzq::RationalCanonicalStructure;
+use algebraeon::rings::isolated_algebraic::RealAlgebraic;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use num_bigint::BigInt;
@@ -74,15 +76,23 @@ impl PythonElement for PythonRational {
 
 impl<'py> PythonElementCast<'py> for PythonRationalSet {
     fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
-        if let Ok(n) = PythonIntegerSet::default().subset_cast_impl(obj) {
+        if let Ok(obj) = PythonIntegerSet::default().subset_cast_impl(obj) {
             return Ok(PythonRational {
-                inner: Rational::from(n.to_elem()),
+                inner: Rational::from(obj.to_elem()),
             });
         }
         Err(CastError::Type)
     }
 
-    fn proper_supset_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+    fn proper_supset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(obj) = PythonRealAlgebraicSet::default().supset_cast_impl(obj) {
+            match obj.inner {
+                RealAlgebraic::Rational(rational) => return Ok(PythonRational { inner: rational }),
+                RealAlgebraic::Real(_) => {
+                    return Err(CastError::Value);
+                }
+            }
+        }
         Err(CastError::Type)
     }
 
@@ -121,7 +131,7 @@ impl_pymethods_neg!(PythonRational);
 impl_pymethods_sub!(PythonRational);
 impl_pymethods_mul!(PythonRational);
 impl_pymethods_div!(PythonRational);
-impl_pymethods_nat_pow!(PythonRational);
+impl_pymethods_int_pow!(PythonRational);
 
 #[pymethods]
 impl PythonRational {

@@ -23,6 +23,10 @@ fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
         "Rat",
         Py::new(m.py(), rational::PythonRationalSet::default())?,
     )?;
+    m.add(
+        "RealAlg",
+        Py::new(m.py(), real_algebraic::PythonRealAlgebraicSet::default())?,
+    )?;
 
     m.add_function(wrap_pyfunction!(algebraeon_rust_library_version, m)?)?;
     m.add_function(wrap_pyfunction!(algebraeon_python_library_version, m)?)?;
@@ -263,12 +267,23 @@ macro_rules! impl_pymethods_set {
                 args: &Bound<'_, pyo3::types::PyTuple>,
                 kwargs: Option<&Bound<'_, pyo3::types::PyDict>>,
             ) -> PyResult<Py<PyAny>> {
+                use pyo3::exceptions::PyValueError;
                 use pyo3::PyTypeInfo;
                 let py = args.py();
                 if args.len() == 1 && kwargs.is_none() {
                     let first = args.get_item(0)?;
-                    if let Ok(result) = self.explicit_cast(&first) {
-                        return result.into_py_any(py);
+                    match self.explicit_cast_impl(&first) {
+                        Ok(result) => {
+                            return result.into_py_any(py);
+                        },
+                        Err(CastError::Value) => {
+                            return Err(PyValueError::new_err(format!(
+                                "Cannot construct `{}` using `{}`",
+                                self.repr(),
+                                first.repr()?,
+                            )));
+                        },
+                        Err(CastError::Type) => {}
                     }
                 }
                 <Self as $crate::PythonSet>::Elem::type_object(py)
@@ -726,7 +741,7 @@ macro_rules! impl_pymethods_nat_pow {
                 modulus: &Bound<'py, PyAny>,
             ) -> PyResult<Py<PyAny>> {
                 use ::algebraeon::rings::structure::MultiplicativeMonoidSignature;
-                use $crate::natural::PythonNatural;
+                use $crate::natural::PythonNaturalSet;
                 static_assertions::const_assert!(impls::impls!($python_type : PythonElement));
                 static_assertions::const_assert!(
                     impls::impls!(<$python_type as $crate::PythonElement>::Structure : MultiplicativeMonoidSignature)
@@ -736,8 +751,59 @@ macro_rules! impl_pymethods_nat_pow {
                 if !modulus.is_none() {
                     Ok(py.NotImplemented())
                 } else {
-                    if let Ok(other) = PythonNatural::py_new(other) {
+                    if let Ok(other) = PythonNaturalSet::default().implicit_cast(other)  {
                         Ok(set.from_elem(self.structure().nat_pow(self.to_elem(), other.to_elem())).into_py_any(py)?)
+                    } else {
+                        Ok(py.NotImplemented())
+                    }
+                }
+            }
+
+            fn __rpow__<'py>(
+                &self,
+                other: &Bound<'py, PyAny>,
+                _modulus: &Bound<'py, PyAny>,
+            ) -> PyResult<Py<PyAny>> {
+                let py = other.py();
+                Ok(py.NotImplemented())
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_pymethods_int_pow {
+    ($python_type:ident) => {
+        #[pymethods]
+        impl $python_type {
+            fn __pow__<'py>(
+                &self,
+                other: &Bound<'py, PyAny>,
+                modulus: &Bound<'py, PyAny>,
+            ) -> PyResult<Py<PyAny>> {
+                use ::algebraeon::rings::structure::MultiplicativeMonoidTryInverseSignature;
+                use $crate::integer::PythonIntegerSet;
+                static_assertions::const_assert!(impls::impls!($python_type : PythonElement));
+                static_assertions::const_assert!(
+                    impls::impls!(<$python_type as $crate::PythonElement>::Structure : MultiplicativeMonoidTryInverseSignature)
+                );
+                let py = other.py();
+                let set = self.set();
+                if !modulus.is_none() {
+                    Ok(py.NotImplemented())
+                } else {
+                    if let Ok(other) = PythonIntegerSet::default().implicit_cast(other) {
+                        if let Some(repr) = self
+                            .structure()
+                            .try_int_pow(self.to_elem(), other.to_elem())
+                        {
+                            set.from_elem(repr).into_py_any(py)
+                        } else {
+                            Err(PyValueError::new_err(format!(
+                                "Can't invert `{}`",
+                                self.to_elem(),
+                            )))
+                        }
                     } else {
                         Ok(py.NotImplemented())
                     }
@@ -766,3 +832,4 @@ pub mod natural_factored;
 pub mod natural_polynomial;
 pub mod rational;
 pub mod rational_polynomial;
+pub mod real_algebraic;
