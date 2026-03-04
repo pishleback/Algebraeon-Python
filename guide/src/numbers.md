@@ -60,11 +60,11 @@ Nat(Nat(3))
 Int(Int(-3))
 Rat(Rat(3))
 
-# TypeError because `Int` is a strictly larger set than 
-# `Nat` so implicit conversion is not allowed.
+# Explicit casting from a larger set to a smaller set is allowed.
+Nat(Int(5))
 try:
-    Nat(Int(5))
-except TypeError:
+    Nat(Int(-5))
+except ValueError:
     pass
 else:
     raise Exception()

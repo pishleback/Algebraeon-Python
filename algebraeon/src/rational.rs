@@ -1,3 +1,4 @@
+use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
@@ -36,10 +37,10 @@ impl PythonSet for PythonRationalSet {
 
 impl_pymethods_set!(PythonRationalSet);
 
-#[pyclass]
+#[pyclass(name = "Rat")]
 #[derive(Debug, Clone)]
 pub struct PythonRational {
-    inner: Rational,
+    pub inner: Rational,
 }
 
 impl PythonElement for PythonRational {
@@ -73,17 +74,26 @@ impl PythonElement for PythonRational {
 }
 
 impl<'py> PythonElementCast<'py> for PythonRationalSet {
-    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
-        obj.extract::<Self::Elem>().ok()
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(n) = PythonIntegerSet::default().subset_cast_impl(obj) {
+            return Ok(PythonRational {
+                inner: Rational::from(n.to_elem()),
+            });
+        }
+        Err(CastError::Type)
     }
 
-    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonRational> {
+    fn proper_supset_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
+    }
+
+    fn other_implicit_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
         let py = obj.py();
         if obj
             .get_type()
-            .is(py.import("fractions")?.getattr("Fraction")?)
+            .is(py.import("fractions").unwrap().getattr("Fraction").unwrap())
         {
-            Ok(PythonRational {
+            return Ok(PythonRational {
                 inner: Rational::from_integers(
                     PythonInteger::py_new(&obj.getattr("numerator").unwrap())
                         .unwrap()
@@ -92,23 +102,13 @@ impl<'py> PythonElementCast<'py> for PythonRationalSet {
                         .unwrap()
                         .to_elem(),
                 ),
-            })
-        } else {
-            Err(PyTypeError::new_err(format!(
-                "Can't create a `Rat` from a `{}`",
-                obj.get_type().repr()?
-            )))
+            });
         }
+        Err(CastError::Type)
     }
 
-    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonRational> {
-        if let Ok(n) = PythonIntegerSet::default().cast_subtype(obj) {
-            Some(PythonRational {
-                inner: Rational::from(n.to_elem()),
-            })
-        } else {
-            None
-        }
+    fn other_explicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 }
 
@@ -151,7 +151,7 @@ impl PythonRational {
                 )))
             }
         } else {
-            PythonRationalSet::default().cast_subtype(obj1)
+            PythonRationalSet::default().explicit_cast(obj1)
         }
     }
 

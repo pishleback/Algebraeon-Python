@@ -1,3 +1,4 @@
+use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
@@ -17,7 +18,7 @@ use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,36 +135,35 @@ impl PythonElement for PythonIntegerModulo {
 }
 
 impl<'py> PythonElementCast<'py> for PythonIntegerModuloSet {
-    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(n) = PythonIntegerSet::default().implicit_cast(obj) {
+            return Ok(PythonIntegerModulo {
+                repr: Integer::from(n.to_elem()),
+                modulus: self.n(),
+            });
+        }
         if let Ok(mut other) = obj.extract::<Self::Elem>() {
             let n = self.n();
             if other.modulus.rem(&n) == Natural::ZERO {
                 other.modulus = n;
-                Some(other)
+                return Ok(other);
             } else {
-                None
+                return Err(CastError::Value);
             }
-        } else {
-            None
         }
+        Err(CastError::Type)
     }
 
-    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonIntegerModulo> {
-        Err(PyTypeError::new_err(format!(
-            "Can't create an `IntMod` from a `{}`",
-            obj.get_type().repr()?
-        )))
+    fn proper_supset_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 
-    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonIntegerModulo> {
-        if let Ok(n) = PythonIntegerSet::default().cast_subtype(obj) {
-            Some(PythonIntegerModulo {
-                repr: Integer::from(n.to_elem()),
-                modulus: self.n(),
-            })
-        } else {
-            None
-        }
+    fn other_implicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
+    }
+
+    fn other_explicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 }
 
@@ -224,7 +224,7 @@ impl PythonIntegerModulo {
 impl PythonIntegerModulo {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        PythonIntegerModuloSet::new(Natural::ZERO).cast_subtype(obj)
+        PythonIntegerModuloSet::new(Natural::ZERO).explicit_cast(obj)
     }
 }
 

@@ -1,9 +1,11 @@
+use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::algebraeon_to_bignum_int;
 use crate::bignum_to_algebraeon_int;
 use crate::natural::PythonNaturalSet;
+use crate::rational::PythonRationalSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::IntegerCanonicalStructure;
 use algebraeon::sets::structure::MetaType;
@@ -11,7 +13,7 @@ use algebraeon::sets::structure::SetSignature;
 use num_bigint::BigInt;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -35,7 +37,7 @@ impl PythonSet for PythonIntegerSet {
 
 impl_pymethods_set!(PythonIntegerSet);
 
-#[pyclass]
+#[pyclass(name = "Int")]
 #[derive(Debug, Clone)]
 pub struct PythonInteger {
     pub inner: Integer,
@@ -72,31 +74,43 @@ impl PythonElement for PythonInteger {
 }
 
 impl<'py> PythonElementCast<'py> for PythonIntegerSet {
-    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
-        obj.extract::<Self::Elem>().ok()
-    }
-
-    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonInteger> {
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
         if let Ok(n) = obj.extract::<BigInt>() {
-            Ok(PythonInteger {
+            return Ok(PythonInteger {
                 inner: bignum_to_algebraeon_int(&n),
-            })
-        } else {
-            Err(PyTypeError::new_err(format!(
-                "Can't create an `Int` from a `{}`",
-                obj.get_type().repr()?
-            )))
+            });
         }
+        match PythonNaturalSet::default().subset_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(PythonInteger {
+                    inner: Integer::from(obj.to_elem()),
+                });
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        Err(CastError::Type)
     }
 
-    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonInteger> {
-        if let Ok(n) = PythonNaturalSet::default().cast_subtype(obj) {
-            Some(PythonInteger {
-                inner: Integer::from(n.to_elem()),
-            })
-        } else {
-            None
+    fn proper_supset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(s) = PythonRationalSet::default().supset_cast_impl(obj) {
+            if let Ok(s) = Integer::try_from(s.inner) {
+                return Ok(PythonInteger { inner: s });
+            } else {
+                return Err(CastError::Value);
+            }
         }
+        Err(CastError::Type)
+    }
+
+    fn other_implicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
+    }
+
+    fn other_explicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 }
 
@@ -114,7 +128,7 @@ impl_pymethods_nat_pow!(PythonInteger);
 impl PythonInteger {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        PythonIntegerSet::default().cast_subtype(obj)
+        PythonIntegerSet::default().explicit_cast(obj)
     }
 
     pub fn __int__(&self) -> BigInt {

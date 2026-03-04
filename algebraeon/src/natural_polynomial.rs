@@ -1,8 +1,10 @@
+use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonPolynomialSet;
 use crate::PythonSet;
 use crate::PythonToPolynomialSet;
+use crate::integer_polynomial::PythonIntegerPolynomialSet;
 use crate::natural::PythonNaturalSet;
 use algebraeon::nzq::Natural;
 use algebraeon::nzq::NaturalCanonicalStructure;
@@ -12,7 +14,7 @@ use algebraeon::rings::polynomial::ToPolynomialSignature;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
-use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -30,7 +32,7 @@ impl PythonSet for PythonNaturalPolynomialSet {
     }
 
     fn repr(&self) -> String {
-        format!("Polynomial({})", PythonNaturalSet::default().repr())
+        format!("Poly({})", PythonNaturalSet::default().repr())
     }
 }
 
@@ -56,7 +58,7 @@ impl PythonToPolynomialSet for PythonNaturalSet {
 
 impl_pymethods_to_polynomial_set!(PythonNaturalSet);
 
-#[pyclass]
+#[pyclass(name = "NatPoly")]
 #[derive(Debug, Clone)]
 pub struct PythonNaturalPolynomial {
     inner: Polynomial<Natural>,
@@ -89,7 +91,7 @@ impl PythonElement for PythonNaturalPolynomial {
 
     fn repr(&self) -> String {
         format!(
-            "Polynomial({}, {})",
+            "Poly({}, {})",
             self.inner,
             PythonNaturalSet::default().repr()
         )
@@ -97,22 +99,39 @@ impl PythonElement for PythonNaturalPolynomial {
 }
 
 impl<'py> PythonElementCast<'py> for PythonNaturalPolynomialSet {
-    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem> {
-        obj.extract::<Self::Elem>().ok()
-    }
-
-    fn cast_equiv(&self, _obj: &Bound<'py, PyAny>) -> PyResult<PythonNaturalPolynomial> {
-        Err(PyTypeError::new_err(""))
-    }
-
-    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<PythonNaturalPolynomial> {
-        if let Ok(n) = PythonNaturalSet::default().cast_subtype(obj) {
-            Some(PythonNaturalPolynomial {
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(n) = PythonNaturalSet::default().implicit_cast(obj) {
+            return Ok(PythonNaturalPolynomial {
                 inner: Polynomial::constant(n.to_elem().clone()),
-            })
-        } else {
-            None
+            });
         }
+        Err(CastError::Type)
+    }
+
+    fn proper_supset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(n) = PythonIntegerPolynomialSet::default().supset_cast_impl(obj) {
+            if let Ok(coeffs) = n
+                .inner
+                .coeffs()
+                .map(Natural::try_from)
+                .collect::<Result<Vec<_>, _>>()
+            {
+                return Ok(PythonNaturalPolynomial {
+                    inner: Polynomial::from_coeffs(coeffs),
+                });
+            } else {
+                return Err(CastError::Value);
+            }
+        }
+        Err(CastError::Type)
+    }
+
+    fn other_implicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
+    }
+
+    fn other_explicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 }
 
@@ -127,6 +146,6 @@ impl_pymethods_nat_pow!(PythonNaturalPolynomial);
 impl PythonNaturalPolynomial {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        PythonNaturalPolynomialSet::default().cast_subtype(obj)
+        PythonNaturalPolynomialSet::default().explicit_cast(obj)
     }
 }

@@ -3,8 +3,11 @@ use ::algebraeon::{
     sets::structure::SetSignature,
 };
 use num_bigint::{BigInt, BigUint};
-
-use pyo3::{PyTypeInfo, prelude::*};
+use pyo3::{
+    PyTypeInfo,
+    exceptions::{PyTypeError, PyValueError},
+    prelude::*,
+};
 
 #[pymodule]
 fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -62,7 +65,7 @@ fn algebraeon_to_bignum_int(x: &Integer) -> BigInt {
     BigInt::from_str(x.to_string().as_str()).unwrap()
 }
 
-pub trait PythonSet: PartialEq + Eq {
+pub trait PythonSet: Sized + PartialEq + Eq {
     type Elem: PythonElement<Set = Self> + PyTypeInfo;
 
     #[allow(clippy::wrong_self_convention)]
@@ -70,27 +73,160 @@ pub trait PythonSet: PartialEq + Eq {
         &self,
         elem: <<Self::Elem as PythonElement>::Structure as SetSignature>::Set,
     ) -> Self::Elem;
+
     fn str(&self) -> String;
+
     fn repr(&self) -> String;
+}
+
+pub enum CastError {
+    Value,
+    Type,
 }
 
 pub trait PythonElementCast<'py>: PythonSet
 where
     Self::Elem: Sized + for<'a> FromPyObject<'a, 'py> + PyTypeInfo,
 {
-    fn cast_exact(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem>;
+    // Casting from a proper subset. For example
+    //  - `Natural` -> `Integer`
+    //  - `Integer` -> `Modulo(6)`
+    //  - `Modulo(6)` -> `Modulo(3)`
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError>;
 
-    fn cast_equiv(&self, obj: &Bound<'py, PyAny>) -> PyResult<Self::Elem>;
+    // Casting from a proper superset. For example
+    //  - `Rational` -> `Natural`
+    fn proper_supset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError>;
 
-    fn cast_proper_subtype(&self, obj: &Bound<'py, PyAny>) -> Option<Self::Elem>;
+    // Other casts which can be done implicitly
+    //  - `int` -> `Integer`
+    //  - `fractions.Fraction` -> `Rational`
+    fn other_implicit_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError>;
 
-    fn cast_subtype(&self, obj: &Bound<'py, PyAny>) -> PyResult<Self::Elem> {
-        if let Some(obj) = self.cast_exact(obj) {
-            Ok(obj)
-        } else if let Some(obj) = self.cast_proper_subtype(obj) {
-            Ok(obj)
-        } else {
-            self.cast_equiv(obj)
+    // Other casts which can be done explicitly
+    //  - `RationalPolynomial` -> `EmbeddingAlgebraicNumberField`
+    fn other_explicit_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError>;
+
+    fn subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(obj) = obj.extract::<Self::Elem>()
+            && self == &obj.set()
+        {
+            return Ok(obj);
+        }
+        match self.proper_subset_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(obj);
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        Err(CastError::Type)
+    }
+
+    fn supset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(obj) = obj.extract::<Self::Elem>()
+            && self == &obj.set()
+        {
+            return Ok(obj);
+        }
+        match self.proper_supset_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(obj);
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        Err(CastError::Type)
+    }
+
+    fn implicit_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        match self.subset_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(obj);
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        match self.other_implicit_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(obj);
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        Err(CastError::Type)
+    }
+
+    fn explicit_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        match self.implicit_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(obj);
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        match self.proper_supset_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(obj);
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        match self.other_explicit_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(obj);
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
+        }
+        Err(CastError::Type)
+    }
+
+    // A cast which is done implicitly.
+    fn implicit_cast(&self, obj: &Bound<'py, PyAny>) -> PyResult<Self::Elem> {
+        match self.implicit_cast_impl(obj) {
+            Ok(obj) => Ok(obj),
+            Err(CastError::Value) => Err(PyValueError::new_err(format!(
+                "Cannot implicitly cast `{}` to `{}`",
+                obj.repr()?,
+                self.repr(),
+            ))),
+            Err(CastError::Type) => Err(PyTypeError::new_err(format!(
+                "Cannot implicitly cast from `{}` to `{}`",
+                obj.get_type().repr()?,
+                self.repr(),
+            ))),
+        }
+    }
+
+    // A cast which is done explicit.
+    fn explicit_cast(&self, obj: &Bound<'py, PyAny>) -> PyResult<Self::Elem> {
+        match self.explicit_cast_impl(obj) {
+            Ok(obj) => Ok(obj),
+            Err(CastError::Value) => Err(PyValueError::new_err(format!(
+                "Cannot explicitly cast `{}` to `{}`",
+                obj.repr()?,
+                self.repr(),
+            ))),
+            Err(CastError::Type) => Err(PyTypeError::new_err(format!(
+                "Cannot explicitly cast from `{}` to `{}`",
+                obj.get_type().repr()?,
+                self.repr(),
+            ))),
         }
     }
 }
@@ -131,7 +267,7 @@ macro_rules! impl_pymethods_set {
                 let py = args.py();
                 if args.len() == 1 && kwargs.is_none() {
                     let first = args.get_item(0)?;
-                    if let Ok(result) = self.cast_subtype(&first) {
+                    if let Ok(result) = self.implicit_cast(&first) {
                         return result.into_py_any(py);
                     }
                 }
@@ -236,7 +372,7 @@ macro_rules! impl_pymethods_eq {
                     impls::impls!(<$python_type as $crate::PythonElement>::Structure : EqSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = self.set().cast_subtype(other) {
+                if let Ok(other) = self.set().implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     let eq_result = structure.equal(self.to_elem(), other.to_elem());
@@ -271,7 +407,7 @@ macro_rules! impl_pymethods_cmp {
                     impls::impls!(<$python_type as $crate::PythonElement>::Structure : OrdSignature)
                 );
                 let py = other.py();
-                if let Ok(other) = self.set().cast_subtype(other) {
+                if let Ok(other) = self.set().implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     let cmp_result = structure.cmp(self.to_elem(), other.to_elem());
@@ -304,7 +440,7 @@ macro_rules! impl_pymethods_add {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(set.from_elem(structure.add(self.to_elem(), other.to_elem())).into_py_any(py)?)
@@ -321,7 +457,7 @@ macro_rules! impl_pymethods_add {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(set.from_elem(structure.add(other.to_elem(), self.to_elem())).into_py_any(py)?)
@@ -380,7 +516,7 @@ macro_rules! impl_pymethods_sub {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(set.from_elem(structure.sub(self.to_elem(), other.to_elem())).into_py_any(py)?)
@@ -397,7 +533,7 @@ macro_rules! impl_pymethods_sub {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(set.from_elem(structure.sub(other.to_elem(), self.to_elem())).into_py_any(py)?)
@@ -443,7 +579,7 @@ macro_rules! impl_pymethods_try_sub {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     if let Some(repr) = structure.try_sub(self.to_elem(), other.to_elem()) {
@@ -464,7 +600,7 @@ macro_rules! impl_pymethods_try_sub {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     if let Some(repr) = structure.try_sub(other.to_elem(), self.to_elem()) {
@@ -493,7 +629,7 @@ macro_rules! impl_pymethods_mul {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(set.from_elem(structure.mul(self.to_elem(), other.to_elem())).into_py_any(py)?)
@@ -510,7 +646,7 @@ macro_rules! impl_pymethods_mul {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     Ok(set.from_elem(structure.mul(other.to_elem(), self.to_elem())).into_py_any(py)?)
@@ -535,7 +671,7 @@ macro_rules! impl_pymethods_div {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     match structure.try_divide(self.to_elem(), other.to_elem()) {
@@ -560,7 +696,7 @@ macro_rules! impl_pymethods_div {
                 );
                 let py = other.py();
                 let set = self.set();
-                if let Ok(other) = set.cast_subtype(other) {
+                if let Ok(other) = set.implicit_cast(other) {
                     let structure = self.structure();
                     debug_assert_eq!(structure, other.structure());
                     match structure.try_divide(other.to_elem(), self.to_elem()) {

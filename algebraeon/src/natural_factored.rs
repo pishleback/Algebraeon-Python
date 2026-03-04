@@ -19,7 +19,7 @@ impl PythonNatural {
     }
 }
 
-#[pyclass(name = "NatFactored")]
+#[pyclass(name = "FactoredNatural")]
 #[derive(Clone)]
 pub struct PythonNaturalFactored {
     inner: Factored<Natural, Natural>,
@@ -58,7 +58,7 @@ impl PythonNaturalFactored {
     }
 
     pub fn __repr__(&self) -> String {
-        format!("NatFactored({})", self.__str__())
+        format!("FactoredNatural({})", self.__str__())
     }
 
     pub fn is_prime(&self) -> bool {
