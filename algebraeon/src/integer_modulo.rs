@@ -2,7 +2,6 @@ use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
-use crate::integer::PythonInteger;
 use crate::integer::PythonIntegerSet;
 use crate::natural::PythonNatural;
 use algebraeon::nzq::Integer;
@@ -31,13 +30,13 @@ pub struct PythonIntegerModuloSet {
 }
 
 impl PythonIntegerModuloSet {
-    fn new(n: Natural) -> Self {
+    pub fn new(n: Natural) -> Self {
         Self {
             structure: Integer::structure().into_quotient_ring(n.into()).unwrap(),
         }
     }
 
-    fn n(&self) -> Natural {
+    pub fn n(&self) -> Natural {
         Natural::try_from(self.structure.modulus()).unwrap()
     }
 }
@@ -192,7 +191,7 @@ impl PythonIntegerModulo {
                     .nat_pow(self.to_elem(), other.to_elem()),
             )
             .into_py_any(py)
-        } else if let Ok(other) = PythonInteger::py_new(other) {
+        } else if let Ok(other) = PythonIntegerSet::default().implicit_cast(other) {
             if let Some(repr) = self
                 .ring_structure()
                 .try_int_pow(self.to_elem(), other.to_elem())
@@ -200,7 +199,7 @@ impl PythonIntegerModulo {
                 set.from_elem(repr).into_py_any(py)
             } else {
                 Err(PyValueError::new_err(format!(
-                    "can't invert `{}` as it is not coprime to the modulus `{}`",
+                    "Cannot invert `{}` as it is not coprime to the modulus `{}`",
                     self.to_elem(),
                     other.to_elem()
                 )))
@@ -217,21 +216,5 @@ impl PythonIntegerModulo {
     ) -> PyResult<Py<PyAny>> {
         let py = other.py();
         Ok(py.NotImplemented())
-    }
-}
-
-#[pymethods]
-impl PythonIntegerModulo {
-    #[new]
-    pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        PythonIntegerModuloSet::new(Natural::ZERO).explicit_cast(obj)
-    }
-}
-
-#[pymethods]
-impl PythonIntegerSet {
-    pub fn r#mod<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonIntegerModuloSet> {
-        let obj = PythonNatural::py_new(obj)?;
-        Ok(PythonIntegerModuloSet::new(obj.inner))
     }
 }

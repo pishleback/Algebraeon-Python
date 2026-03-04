@@ -4,6 +4,8 @@ use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::algebraeon_to_bignum_int;
 use crate::bignum_to_algebraeon_int;
+use crate::integer_modulo::PythonIntegerModuloSet;
+use crate::natural::PythonNatural;
 use crate::natural::PythonNaturalSet;
 use crate::rational::PythonRationalSet;
 use algebraeon::nzq::Integer;
@@ -36,6 +38,14 @@ impl PythonSet for PythonIntegerSet {
 }
 
 impl_pymethods_set!(PythonIntegerSet);
+
+#[pymethods]
+impl PythonIntegerSet {
+    pub fn r#mod<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonIntegerModuloSet> {
+        let obj = PythonNatural::py_new(obj)?;
+        Ok(PythonIntegerModuloSet::new(obj.inner))
+    }
+}
 
 #[pyclass(name = "Int")]
 #[derive(Debug, Clone)]
@@ -126,12 +136,9 @@ impl_pymethods_nat_pow!(PythonInteger);
 
 #[pymethods]
 impl PythonInteger {
-    #[new]
-    pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        PythonIntegerSet::default().explicit_cast(obj)
-    }
-
     pub fn __int__(&self) -> BigInt {
         algebraeon_to_bignum_int(&self.inner)
     }
 }
+
+

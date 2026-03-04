@@ -267,7 +267,7 @@ macro_rules! impl_pymethods_set {
                 let py = args.py();
                 if args.len() == 1 && kwargs.is_none() {
                     let first = args.get_item(0)?;
-                    if let Ok(result) = self.implicit_cast(&first) {
+                    if let Ok(result) = self.explicit_cast(&first) {
                         return result.into_py_any(py);
                     }
                 }

@@ -3,7 +3,6 @@ use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::algebraeon_to_bignum_int;
-use crate::integer::PythonInteger;
 use crate::integer::PythonIntegerSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::Rational;
@@ -95,10 +94,12 @@ impl<'py> PythonElementCast<'py> for PythonRationalSet {
         {
             return Ok(PythonRational {
                 inner: Rational::from_integers(
-                    PythonInteger::py_new(&obj.getattr("numerator").unwrap())
+                    PythonIntegerSet::default()
+                        .explicit_cast(&obj.getattr("numerator").unwrap())
                         .unwrap()
                         .to_elem(),
-                    PythonInteger::py_new(&obj.getattr("denominator").unwrap())
+                    PythonIntegerSet::default()
+                        .explicit_cast(&obj.getattr("denominator").unwrap())
                         .unwrap()
                         .to_elem(),
                 ),
@@ -132,8 +133,8 @@ impl PythonRational {
     ) -> PyResult<Self> {
         let py = obj1.py();
         if let Some(obj2) = obj2 {
-            if let Ok(obj1) = PythonInteger::py_new(obj1)
-                && let Ok(obj2) = PythonInteger::py_new(obj2)
+            if let Ok(obj1) = PythonIntegerSet::default().implicit_cast(obj1)
+                && let Ok(obj2) = PythonIntegerSet::default().implicit_cast(obj2)
             {
                 Ok(Self::py_new(obj1.into_py_any(py)?.bind(py), None)?
                     .__truediv__(
