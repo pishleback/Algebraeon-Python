@@ -1,6 +1,6 @@
 # Algebraeon (Python Module)
 
-Algebraeon is a computational algebra system (CAS) written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API subject to change.
+Algebraeon is a computational algebra system (CAS) written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API subject to change. That said, I plan to only expose the more mature features via the Python API, so it should be more stable than the Rust API.
 
 The Python library currently supports only a _very_ small subset of the capabilities of the Rust library. Once it has been better fleshed out it will be the recommended way to use Algebraeon for people who care more about maths than software.
 
