@@ -4,12 +4,12 @@ use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::integer::PythonIntegerSet;
 use crate::rational::PythonRational;
-use crate::rational::PythonRationalSet;
 use crate::rational_polynomial::PythonRationalPolynomial;
 use crate::rational_polynomial::PythonRationalPolynomialSet;
-use algebraeon::rings::isolated_algebraic::RealAlgebraic;
-use algebraeon::rings::isolated_algebraic::RealAlgebraicCanonicalStructure;
-use algebraeon::rings::isolated_algebraic::RealIsolatingRegion;
+use crate::real_algebraic::PythonRealAlgebraicSet;
+use algebraeon::rings::isolated_algebraic::ComplexAlgebraic;
+use algebraeon::rings::isolated_algebraic::ComplexAlgebraicCanonicalStructure;
+use algebraeon::rings::isolated_algebraic::ComplexIsolatingRegion;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use num_bigint::BigInt;
@@ -21,37 +21,37 @@ use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct PythonRealAlgebraicSet {}
+pub struct PythonComplexAlgebraicSet {}
 
-impl PythonSet for PythonRealAlgebraicSet {
-    type Elem = PythonRealAlgebraic;
+impl PythonSet for PythonComplexAlgebraicSet {
+    type Elem = PythonComplexAlgebraic;
 
-    fn from_elem(&self, elem: RealAlgebraic) -> Self::Elem {
-        PythonRealAlgebraic { inner: elem }
+    fn from_elem(&self, elem: ComplexAlgebraic) -> Self::Elem {
+        PythonComplexAlgebraic { inner: elem }
     }
 
     fn str(&self) -> String {
-        "Alg(ℚ, ℝ)".to_string()
+        "Alg(ℚ, ℂ)".to_string()
     }
 
     fn repr(&self) -> String {
-        "RealAlg".to_string()
+        "CpxAlg".to_string()
     }
 }
 
-impl_pymethods_set!(PythonRealAlgebraicSet);
+impl_pymethods_set!(PythonComplexAlgebraicSet);
 
 #[pymethods]
-impl PythonRealAlgebraicSet {
+impl PythonComplexAlgebraicSet {
     pub fn roots<'py>(&self, poly: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
         let py = poly.py();
         if let Ok(poly) = PythonRationalPolynomialSet::default().implicit_cast(poly) {
             Ok(PyList::new(
                 py,
                 poly.inner
-                    .all_real_roots()
+                    .all_complex_roots()
                     .into_iter()
-                    .map(|root| PythonRealAlgebraic { inner: root })
+                    .map(|root| PythonComplexAlgebraic { inner: root })
                     .collect::<Vec<_>>(),
             )
             .unwrap()
@@ -69,9 +69,9 @@ impl PythonRealAlgebraicSet {
                 py,
                 poly.inner
                     .primitive_squarefree_part()
-                    .all_real_roots()
+                    .all_complex_roots()
                     .into_iter()
-                    .map(|root| PythonRealAlgebraic { inner: root })
+                    .map(|root| PythonComplexAlgebraic { inner: root })
                     .collect::<Vec<_>>(),
             )
             .unwrap()
@@ -83,19 +83,19 @@ impl PythonRealAlgebraicSet {
     }
 }
 
-#[pyclass(name = "RealAlg")]
+#[pyclass(name = "CpxAlg")]
 #[derive(Debug, Clone)]
-pub struct PythonRealAlgebraic {
-    pub inner: RealAlgebraic,
+pub struct PythonComplexAlgebraic {
+    pub inner: ComplexAlgebraic,
 }
 
-impl PythonElement for PythonRealAlgebraic {
-    type Set = PythonRealAlgebraicSet;
+impl PythonElement for PythonComplexAlgebraic {
+    type Set = PythonComplexAlgebraicSet;
 
-    type Structure = RealAlgebraicCanonicalStructure;
+    type Structure = ComplexAlgebraicCanonicalStructure;
 
     fn structure(&self) -> Self::Structure {
-        RealAlgebraic::structure()
+        ComplexAlgebraic::structure()
     }
 
     fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
@@ -107,7 +107,7 @@ impl PythonElement for PythonRealAlgebraic {
     }
 
     fn set(&self) -> Self::Set {
-        PythonRealAlgebraicSet {}
+        PythonComplexAlgebraicSet {}
     }
 
     fn str(&self) -> String {
@@ -119,11 +119,11 @@ impl PythonElement for PythonRealAlgebraic {
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonRealAlgebraicSet {
+impl<'py> PythonElementCast<'py> for PythonComplexAlgebraicSet {
     fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
-        if let Ok(obj) = PythonRationalSet::default().subset_cast_impl(obj) {
-            return Ok(PythonRealAlgebraic {
-                inner: RealAlgebraic::Rational(obj.inner),
+        if let Ok(obj) = PythonRealAlgebraicSet::default().subset_cast_impl(obj) {
+            return Ok(PythonComplexAlgebraic {
+                inner: ComplexAlgebraic::Real(obj.inner),
             });
         }
         Err(CastError::Type)
@@ -142,18 +142,18 @@ impl<'py> PythonElementCast<'py> for PythonRealAlgebraicSet {
     }
 }
 
-impl_pymethods_elem!(PythonRealAlgebraic);
-impl_pymethods_cmp!(PythonRealAlgebraic);
-impl_pymethods_pos!(PythonRealAlgebraic);
-impl_pymethods_add!(PythonRealAlgebraic);
-impl_pymethods_neg!(PythonRealAlgebraic);
-impl_pymethods_sub!(PythonRealAlgebraic);
-impl_pymethods_mul!(PythonRealAlgebraic);
-impl_pymethods_div!(PythonRealAlgebraic);
-impl_pymethods_int_pow!(PythonRealAlgebraic);
+impl_pymethods_elem!(PythonComplexAlgebraic);
+impl_pymethods_eq!(PythonComplexAlgebraic);
+impl_pymethods_pos!(PythonComplexAlgebraic);
+impl_pymethods_add!(PythonComplexAlgebraic);
+impl_pymethods_neg!(PythonComplexAlgebraic);
+impl_pymethods_sub!(PythonComplexAlgebraic);
+impl_pymethods_mul!(PythonComplexAlgebraic);
+impl_pymethods_div!(PythonComplexAlgebraic);
+impl_pymethods_int_pow!(PythonComplexAlgebraic);
 
 #[pymethods]
-impl PythonRealAlgebraic {
+impl PythonComplexAlgebraic {
     pub fn __int__<'py>(&self, py: Python<'py>) -> PyResult<BigInt> {
         Ok(PythonIntegerSet::default()
             .explicit_cast(&self.clone().into_bound_py_any(py)?)?
@@ -162,8 +162,18 @@ impl PythonRealAlgebraic {
 
     pub fn is_rational(&self) -> bool {
         match &self.inner {
-            RealAlgebraic::Rational(_) => true,
-            RealAlgebraic::Real(_) => false,
+            ComplexAlgebraic::Real(real_algebraic) => match real_algebraic {
+                algebraeon::rings::isolated_algebraic::RealAlgebraic::Rational(_) => true,
+                algebraeon::rings::isolated_algebraic::RealAlgebraic::Real(_) => false,
+            },
+            ComplexAlgebraic::Complex(_) => false,
+        }
+    }
+
+    pub fn is_real(&self) -> bool {
+        match &self.inner {
+            ComplexAlgebraic::Real(_) => true,
+            ComplexAlgebraic::Complex(_) => false,
         }
     }
 
@@ -175,14 +185,38 @@ impl PythonRealAlgebraic {
 
     pub fn isolate<'py>(&self, py: Python<'py>) -> Py<PyAny> {
         match self.inner.isolate() {
-            RealIsolatingRegion::Rational(r) => {
+            ComplexIsolatingRegion::Rational(r) => {
                 PythonRational { inner: r.clone() }.into_py_any(py).unwrap()
             }
-            RealIsolatingRegion::Interval(a, b) => PyTuple::new(
+            ComplexIsolatingRegion::RealInterval(a, b) => PyTuple::new(
                 py,
                 vec![
                     PythonRational { inner: a.clone() },
                     PythonRational { inner: b.clone() },
+                ],
+            )
+            .unwrap()
+            .into_py_any(py)
+            .unwrap(),
+            ComplexIsolatingRegion::Box(a, b, c, d) => PyTuple::new(
+                py,
+                vec![
+                    PyTuple::new(
+                        py,
+                        vec![
+                            PythonRational { inner: a.clone() },
+                            PythonRational { inner: b.clone() },
+                        ],
+                    )
+                    .unwrap(),
+                    PyTuple::new(
+                        py,
+                        vec![
+                            PythonRational { inner: c.clone() },
+                            PythonRational { inner: d.clone() },
+                        ],
+                    )
+                    .unwrap(),
                 ],
             )
             .unwrap()

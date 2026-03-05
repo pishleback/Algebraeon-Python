@@ -140,5 +140,3 @@ impl PythonInteger {
         algebraeon_to_bignum_int(&self.inner)
     }
 }
-
-

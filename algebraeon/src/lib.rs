@@ -27,6 +27,13 @@ fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
         "RealAlg",
         Py::new(m.py(), real_algebraic::PythonRealAlgebraicSet::default())?,
     )?;
+    m.add(
+        "CpxAlg",
+        Py::new(
+            m.py(),
+            complex_algebraic::PythonComplexAlgebraicSet::default(),
+        )?,
+    )?;
 
     m.add_function(wrap_pyfunction!(algebraeon_rust_library_version, m)?)?;
     m.add_function(wrap_pyfunction!(algebraeon_python_library_version, m)?)?;
@@ -822,6 +829,7 @@ macro_rules! impl_pymethods_int_pow {
     };
 }
 
+pub mod complex_algebraic;
 pub mod integer;
 pub mod integer_factored;
 pub mod integer_modulo;
