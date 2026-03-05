@@ -34,6 +34,14 @@ fn algebraeon(m: &Bound<'_, PyModule>) -> PyResult<()> {
             complex_algebraic::PythonComplexAlgebraicSet::default(),
         )?,
     )?;
+    m.add(
+        "CpxAlg",
+        Py::new(
+            m.py(),
+            complex_algebraic::PythonComplexAlgebraicSet::default(),
+        )?,
+    )?;
+    m.add_function(wrap_pyfunction!(p_adic_alg, m)?)?;
 
     m.add_function(wrap_pyfunction!(algebraeon_rust_library_version, m)?)?;
     m.add_function(wrap_pyfunction!(algebraeon_python_library_version, m)?)?;
@@ -47,8 +55,18 @@ fn algebraeon_python_library_version() -> &'static str {
 }
 
 #[pyfunction]
-pub fn algebraeon_rust_library_version() -> &'static str {
+fn algebraeon_rust_library_version() -> &'static str {
     include_str!(concat!(env!("OUT_DIR"), "/algebraeon_dep_version.rs"))
+}
+
+#[pyfunction(name = "PAdicAlg")]
+fn p_adic_alg(p: &Bound<'_, PyAny>) -> PyResult<padic_algebraic::PythonPAdicAlgebraicSet> {
+    let p = natural::PythonNaturalSet::default().implicit_cast(p)?.inner;
+    if let Some(p_adic_alg) = padic_algebraic::PythonPAdicAlgebraicSet::new(p.clone()) {
+        Ok(p_adic_alg)
+    } else {
+        Err(PyValueError::new_err(format!("{} is not prime", p)))
+    }
 }
 
 #[allow(unused)]
@@ -838,6 +856,7 @@ pub mod integer_polynomial_factored;
 pub mod natural;
 pub mod natural_factored;
 pub mod natural_polynomial;
+pub mod padic_algebraic;
 pub mod rational;
 pub mod rational_polynomial;
 pub mod real_algebraic;

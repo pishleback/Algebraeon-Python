@@ -1,6 +1,6 @@
 # Algebraic Numbers
 
-## Real Algebraic Numbers
+## Real Algebraic
 
 Algebraeon provides `RealAlg` for representing real algebraic numbers.
 
@@ -98,7 +98,7 @@ root: ≈1.315
 """
 ```
 
-## Complex Algebraic Numbers
+## Complex Algebraic
 
 Algebraeon provides `CpxAlg` for representing complex algebraic numbers.
 
@@ -125,6 +125,128 @@ distinct roots :  [RealAlg(0), RealAlg(-√2), RealAlg(√2), RealAlg(-i), RealA
 ### Arithmetic Operations
 
 Standard arithmetic operations are implemented for complex algebraic numbers.
+
+```python
+from algebraeon import *
+
+x = Int.polynomials().var()
+p = (x ** 3 - 2 * x) * (x ** 4 + 3)
+
+for root in CpxAlg.distinct_roots(p):
+    print("root =", root)
+    print("    root^2+1 =", root ** 2 + 1)
+
+# Output:
+"""
+root = 0
+    root^2+1 = 1
+root = -√2
+    root^2+1 = 3
+root = √2
+    root^2+1 = 3
+root = ≈-0.931-0.931i
+    root^2+1 = 1+i√3
+root = ≈-0.931+0.931i
+    root^2+1 = 1-i√3
+root = ≈0.931-0.931i
+    root^2+1 = 1-i√3
+root = ≈0.931+0.931i
+    root^2+1 = 1+i√3
+"""
+```
+
+
+### Minimal Polynomial and Isolating Box
+
+ - `.is_rational()` returns `True` or `False` depending upon whether it is a rational number.
+ - `.is_real()` returns `True` or `False` depending upon whether it is a real number.
+ - `.minimal_polynomial()` returns the rational monic minimal polynomial.
+ - `.isolate()` may return different things depending on the number:
+   - If the number is rational, it returns the number as a `Rat`.
+   - If the number is irrational and real, it returns an open rational isolating interval \\((a, b)\\) such that the real algebraic number is the unique root of its minimal polynomial within the interval.
+   - If the number is irrational and complex, it returns a pair of open intervals \\((a, b)\\) and \\((c, d)\\) such that the real algebraic number \\(z\\) is the unique root of its minimal polynomial with \\(a < \operatorname{Re}(z) < b\\) and \\(c < \operatorname{Im}(z) < d\\). 
+
+```python
+from algebraeon import *
+
+x = Int.polynomials().var()
+p = (x ** 3 - 2 * x) * (x ** 4 + 3)
+
+for root in CpxAlg.distinct_roots(p):
+    print("root:", root)
+    print(f"    is_rational       : {root.is_rational()}")
+    print(f"    is_real           : {root.is_real()}")
+    print(f"    minimal_polynomial: {root.minimal_polynomial()}")
+    print(f"    isolate           : {repr(root.isolate())}")
+
+# Output:
+"""
+root: 0
+    is_rational       : True
+    is_real           : True
+    minimal_polynomial: λ
+    isolate           : Rat(0)
+root: -√2
+    is_rational       : False
+    is_real           : True
+    minimal_polynomial: λ^2-2
+    isolate           : (Rat(-4), Rat(0))
+root: √2
+    is_rational       : False
+    is_real           : True
+    minimal_polynomial: λ^2-2
+    isolate           : (Rat(0), Rat(4))
+root: ≈-0.931-0.931i
+    is_rational       : False
+    is_real           : False
+    minimal_polynomial: λ^4+3
+    isolate           : ((Rat(-1), Rat(0)), (Rat(-2), Rat(-1/2)))
+root: ≈-0.931+0.931i
+    is_rational       : False
+    is_real           : False
+    minimal_polynomial: λ^4+3
+    isolate           : ((Rat(-1), Rat(0)), (Rat(1/2), Rat(2)))
+root: ≈0.931-0.931i
+    is_rational       : False
+    is_real           : False
+    minimal_polynomial: λ^4+3
+    isolate           : ((Rat(0), Rat(1)), (Rat(-2), Rat(-1/2)))
+root: ≈0.931+0.931i
+    is_rational       : False
+    is_real           : False
+    minimal_polynomial: λ^4+3
+    isolate           : ((Rat(0), Rat(1)), (Rat(1/2), Rat(2)))
+"""
+```
+
+## \\(p\\)-Adic Algebraic
+
+Algebraeon provides `PAdicAlg(p)` for representing \\(p\\)-adic algebraic numbers where \\(p\\) is a prime.
+
+
+### \\(p\\)-Adic Roots of Polynomials
+
+\\(p\\)-adic algebraic numbers can be obtained from polynomials.
+
+```python
+from algebraeon import *
+
+x = Int.polynomials().var()
+p = (x - 3) * (4 * x ** 2 - 17) ** 2
+
+print("all roots      : ", PAdicAlg(2).roots(p))
+print("distinct roots : ", PAdicAlg(2).distinct_roots(p))
+
+# Output:
+"""
+all roots      :  [PAdicAlg(2)(...000011), PAdicAlg(2)(...110100.1), PAdicAlg(2)(...110100.1), PAdicAlg(2)(...001011.1), PAdicAlg(2)(...001011.1)]
+distinct roots :  [PAdicAlg(2)(...000011), PAdicAlg(2)(...110100.1), PAdicAlg(2)(...001011.1)]
+"""
+```
+
+### Arithmetic Operations
+
+Standard arithmetic operations are implemented for \\(p\\)-adic algebraic numbers.
 
 ```python
 from algebraeon import *
