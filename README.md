@@ -1,6 +1,6 @@
 # Algebraeon (Python Module)
 
-Algebraeon is a computational algebra system (CAS) written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API subject to change.
+Algebraeon is a computational algebra system (CAS) written purely in Rust. It implements algorithms for working with matrices, polynomials, algebraic numbers, factorizations, etc. The focus is on exact algebraic computations over approximate numerical solutions. Algebraeon is in early stages of development and the API subject to change. That said, I plan to only expose the more mature features via the Python API, so it should be more stable than the Rust API.
 
 The Python library currently supports only a _very_ small subset of the capabilities of the Rust library. Once it has been better fleshed out it will be the recommended way to use Algebraeon for people who care more about maths than software.
 
@@ -25,19 +25,22 @@ assert(
 ```
 
 ## Further Examples
-The `tests` folder has more examples.
+The user guide and `tests` folder have many more examples.
 
 # Development
-
-## Running Tests
-The Python codeblocks in the User Guide can executed as tests by the following steps:
-
-One time setup:
+## One Time Setup
 1. `cd` into `algebraeon`.
 2. Run `python3 -m venv .env` to create a Python venv.
-3. Run `source .env/bin/activate` to ender the venv.
+3. Run `source .env/bin/activate` to enter the venv.
 4. Run `pip install maturin`. `maturin` is the tool used to build the Python module. Don't run `pip install algebraeon`; this venv is for installing the _locally_ built version of `algebraeon`, which is handled by `maturin`.
 
+## Development
+1. `cd` into `algebraeon`.
+2. Run `source .env/bin/activate` to enter the venv.
+3. Run `maturin develop` or `maturin develop --release` to build the Algebraeon Python library into the venv.
+4. You can now run Python, and `import algebraeon` will import the version just built.
+
+## Running The Tests
 To build the `algebraeon` Python module locally and run the tests in the User Guide against the local build:
 1. `cd` into `run_tests`.
 2. Run `cargo run`.
