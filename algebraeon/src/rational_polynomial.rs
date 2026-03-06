@@ -1,11 +1,10 @@
+use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonPolynomialSet;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::PythonToPolynomialSet;
-use crate::integer_polynomial::PythonIntegerPolynomial;
-use crate::rational::PythonRational;
+use crate::integer_polynomial::PythonIntegerPolynomialSet;
 use crate::rational::PythonRationalSet;
 use algebraeon::nzq::Rational;
 use algebraeon::nzq::RationalCanonicalStructure;
@@ -16,7 +15,7 @@ use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -25,12 +24,16 @@ pub struct PythonRationalPolynomialSet {}
 impl PythonSet for PythonRationalPolynomialSet {
     type Elem = PythonRationalPolynomial;
 
+    fn from_elem(&self, elem: Polynomial<Rational>) -> Self::Elem {
+        PythonRationalPolynomial { inner: elem }
+    }
+
     fn str(&self) -> String {
         format!("{}[λ]", PythonRationalSet::default().str())
     }
 
     fn repr(&self) -> String {
-        format!("Polynomial({})", PythonRationalSet::default().repr())
+        format!("Poly({})", PythonRationalSet::default().repr())
     }
 }
 
@@ -55,14 +58,28 @@ impl PythonToPolynomialSet for PythonRationalSet {
 
 impl_pymethods_to_polynomial_set!(PythonRationalSet);
 
-#[pyclass]
+#[pyclass(name = "RatPoly")]
 #[derive(Debug, Clone)]
 pub struct PythonRationalPolynomial {
-    inner: Polynomial<Rational>,
+    pub inner: Polynomial<Rational>,
 }
 
 impl PythonElement for PythonRationalPolynomial {
     type Set = PythonRationalPolynomialSet;
+
+    type Structure = PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>;
+
+    fn structure(&self) -> Self::Structure {
+        Rational::structure().into_polynomials()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
 
     fn set(&self) -> Self::Set {
         PythonRationalPolynomialSet {}
@@ -74,46 +91,38 @@ impl PythonElement for PythonRationalPolynomial {
 
     fn repr(&self) -> String {
         format!(
-            "Polynomial({}, {})",
+            "Poly({}, {})",
             self.inner,
             PythonRationalSet::default().repr()
         )
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonRationalPolynomial {
-    fn cast_equiv(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
-    }
-
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(n) = PythonRational::cast_subtype(obj) {
-            Some(Self {
-                inner: Polynomial::constant(n.inner().clone()),
-            })
-        } else if let Ok(p) = PythonIntegerPolynomial::cast_subtype(obj) {
-            Some(Self {
-                inner: p.into_inner().apply_map_into(Rational::from),
-            })
-        } else {
-            None
+impl<'py> PythonElementCast<'py> for PythonRationalPolynomialSet {
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(n) = PythonRationalSet::default().implicit_cast(obj) {
+            return Ok(PythonRationalPolynomial {
+                inner: Polynomial::constant(n.to_elem().clone()),
+            });
         }
-    }
-}
-
-impl PythonStructure for PythonRationalPolynomial {
-    type Structure = PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>;
-
-    fn structure(&self) -> Self::Structure {
-        Rational::structure().into_polynomials()
+        if let Ok(p) = PythonIntegerPolynomialSet::default().implicit_cast(obj) {
+            return Ok(PythonRationalPolynomial {
+                inner: p.into_elem().apply_map_into(Rational::from),
+            });
+        }
+        Err(CastError::Type)
     }
 
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
+    fn proper_supset_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
+    fn other_implicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
+    }
+
+    fn other_explicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 }
 
@@ -131,6 +140,6 @@ impl_pymethods_nat_pow!(PythonRationalPolynomial);
 impl PythonRationalPolynomial {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::cast_subtype(obj)
+        PythonRationalPolynomialSet::default().explicit_cast(obj)
     }
 }

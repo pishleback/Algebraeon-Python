@@ -1,10 +1,13 @@
+use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::algebraeon_to_bignum_int;
 use crate::bignum_to_algebraeon_int;
+use crate::integer_modulo::PythonIntegerModuloSet;
 use crate::natural::PythonNatural;
+use crate::natural::PythonNaturalSet;
+use crate::rational::PythonRationalSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::IntegerCanonicalStructure;
 use algebraeon::sets::structure::MetaType;
@@ -12,7 +15,7 @@ use algebraeon::sets::structure::SetSignature;
 use num_bigint::BigInt;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -20,6 +23,10 @@ pub struct PythonIntegerSet {}
 
 impl PythonSet for PythonIntegerSet {
     type Elem = PythonInteger;
+
+    fn from_elem(&self, elem: Integer) -> Self::Elem {
+        PythonInteger { inner: elem }
+    }
 
     fn str(&self) -> String {
         "ℤ".to_string()
@@ -32,7 +39,15 @@ impl PythonSet for PythonIntegerSet {
 
 impl_pymethods_set!(PythonIntegerSet);
 
-#[pyclass]
+#[pymethods]
+impl PythonIntegerSet {
+    pub fn r#mod<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<PythonIntegerModuloSet> {
+        let obj = PythonNatural::py_new(obj)?;
+        Ok(PythonIntegerModuloSet::new(obj.inner))
+    }
+}
+
+#[pyclass(name = "Int")]
 #[derive(Debug, Clone)]
 pub struct PythonInteger {
     pub inner: Integer,
@@ -40,6 +55,20 @@ pub struct PythonInteger {
 
 impl PythonElement for PythonInteger {
     type Set = PythonIntegerSet;
+
+    type Structure = IntegerCanonicalStructure;
+
+    fn structure(&self) -> Self::Structure {
+        Integer::structure()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
 
     fn set(&self) -> Self::Set {
         PythonIntegerSet {}
@@ -54,44 +83,44 @@ impl PythonElement for PythonInteger {
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonInteger {
-    fn cast_equiv(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'py> PythonElementCast<'py> for PythonIntegerSet {
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
         if let Ok(n) = obj.extract::<BigInt>() {
-            Ok(Self {
+            return Ok(PythonInteger {
                 inner: bignum_to_algebraeon_int(&n),
-            })
-        } else {
-            Err(PyTypeError::new_err(format!(
-                "Can't create an `Int` from a `{}`",
-                obj.get_type().repr()?
-            )))
+            });
         }
-    }
-
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(n) = PythonNatural::cast_subtype(obj) {
-            Some(Self {
-                inner: Integer::from(n.inner()),
-            })
-        } else {
-            None
+        match PythonNaturalSet::default().subset_cast_impl(obj) {
+            Ok(obj) => {
+                return Ok(PythonInteger {
+                    inner: Integer::from(obj.to_elem()),
+                });
+            }
+            Err(CastError::Value) => {
+                return Err(CastError::Value);
+            }
+            Err(CastError::Type) => {}
         }
-    }
-}
-
-impl PythonStructure for PythonInteger {
-    type Structure = IntegerCanonicalStructure;
-
-    fn structure(&self) -> Self::Structure {
-        Integer::structure()
+        Err(CastError::Type)
     }
 
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
+    fn proper_supset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(s) = PythonRationalSet::default().supset_cast_impl(obj) {
+            if let Ok(s) = Integer::try_from(s.inner) {
+                return Ok(PythonInteger { inner: s });
+            } else {
+                return Err(CastError::Value);
+            }
+        }
+        Err(CastError::Type)
     }
 
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
+    fn other_implicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
+    }
+
+    fn other_explicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 }
 
@@ -107,11 +136,6 @@ impl_pymethods_nat_pow!(PythonInteger);
 
 #[pymethods]
 impl PythonInteger {
-    #[new]
-    pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::cast_subtype(obj)
-    }
-
     pub fn __int__(&self) -> BigInt {
         algebraeon_to_bignum_int(&self.inner)
     }

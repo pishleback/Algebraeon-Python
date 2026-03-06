@@ -1,6 +1,6 @@
 use crate::integer_factored::PythonIntegerFactored;
 use crate::integer_polynomial::PythonIntegerPolynomial;
-use crate::{PythonStructure, algebraeon_to_bignum_nat};
+use crate::{PythonElement, algebraeon_to_bignum_nat};
 use algebraeon::nzq::{Integer, Natural};
 use algebraeon::rings::polynomial::{Polynomial, ToPolynomialSignature};
 use algebraeon::rings::structure::{
@@ -14,7 +14,7 @@ use pyo3::{IntoPyObjectExt, prelude::*};
 impl PythonIntegerPolynomial {
     pub fn factor(&self) -> PythonIntegerPolynomialFactored {
         PythonIntegerPolynomialFactored {
-            inner: self.inner().factor(),
+            inner: self.to_elem().factor(),
         }
     }
 

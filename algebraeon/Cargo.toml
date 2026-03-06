@@ -1,6 +1,6 @@
 [package]
 name = "algebraeon-python"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -15,7 +15,8 @@ pyo3 = { version = "0.27.0", features = [
     "py-clone",
     "multiple-pymethods",
 ] }
-algebraeon = "0.0.16"
+algebraeon = { version = "0.0.17" }
+# algebraeon = { version = "0.0.17", path = "../../Algebraeon/algebraeon" }
 num-bigint = "0.4.6"
 impls = "1.0.3"
 static_assertions = "1.1.0"

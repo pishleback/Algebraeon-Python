@@ -1,11 +1,11 @@
+use crate::CastError;
 use crate::PythonElement;
 use crate::PythonElementCast;
 use crate::PythonPolynomialSet;
 use crate::PythonSet;
-use crate::PythonStructure;
 use crate::PythonToPolynomialSet;
-use crate::integer::PythonInteger;
 use crate::integer::PythonIntegerSet;
+use crate::rational_polynomial::PythonRationalPolynomialSet;
 use algebraeon::nzq::Integer;
 use algebraeon::nzq::IntegerCanonicalStructure;
 use algebraeon::rings::polynomial::Polynomial;
@@ -15,7 +15,7 @@ use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use pyo3::basic::CompareOp;
 use pyo3::exceptions::PyValueError;
-use pyo3::{IntoPyObjectExt, exceptions::PyTypeError, prelude::*};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 #[pyclass]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -24,12 +24,16 @@ pub struct PythonIntegerPolynomialSet {}
 impl PythonSet for PythonIntegerPolynomialSet {
     type Elem = PythonIntegerPolynomial;
 
+    fn from_elem(&self, elem: Polynomial<Integer>) -> Self::Elem {
+        PythonIntegerPolynomial { inner: elem }
+    }
+
     fn str(&self) -> String {
         format!("{}[λ]", PythonIntegerSet::default().str())
     }
 
     fn repr(&self) -> String {
-        format!("Polynomial({})", PythonIntegerSet::default().repr())
+        format!("Poly({})", PythonIntegerSet::default().repr())
     }
 }
 
@@ -54,7 +58,7 @@ impl PythonToPolynomialSet for PythonIntegerSet {
 
 impl_pymethods_to_polynomial_set!(PythonIntegerSet);
 
-#[pyclass()]
+#[pyclass(name = "IntPoly")]
 #[derive(Debug, Clone)]
 pub struct PythonIntegerPolynomial {
     pub inner: Polynomial<Integer>,
@@ -62,6 +66,20 @@ pub struct PythonIntegerPolynomial {
 
 impl PythonElement for PythonIntegerPolynomial {
     type Set = PythonIntegerPolynomialSet;
+
+    type Structure = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
+
+    fn structure(&self) -> Self::Structure {
+        Integer::structure().into_polynomials()
+    }
+
+    fn to_elem(&self) -> &<Self::Structure as SetSignature>::Set {
+        &self.inner
+    }
+
+    fn into_elem(self) -> <Self::Structure as SetSignature>::Set {
+        self.inner
+    }
 
     fn set(&self) -> Self::Set {
         PythonIntegerPolynomialSet {}
@@ -73,42 +91,47 @@ impl PythonElement for PythonIntegerPolynomial {
 
     fn repr(&self) -> String {
         format!(
-            "Polynomial({}, {})",
+            "Poly({}, {})",
             self.inner,
             PythonIntegerSet::default().repr()
         )
     }
 }
 
-impl<'py> PythonElementCast<'py> for PythonIntegerPolynomial {
-    fn cast_equiv(_obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Err(PyTypeError::new_err(""))
-    }
-
-    fn cast_proper_subtype(obj: &Bound<'py, PyAny>) -> Option<Self> {
-        if let Ok(n) = PythonInteger::cast_subtype(obj) {
-            Some(Self {
-                inner: Polynomial::constant(n.inner().clone()),
-            })
-        } else {
-            None
+impl<'py> PythonElementCast<'py> for PythonIntegerPolynomialSet {
+    fn proper_subset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(n) = PythonIntegerSet::default().subset_cast_impl(obj) {
+            return Ok(PythonIntegerPolynomial {
+                inner: Polynomial::constant(n.to_elem().clone()),
+            });
         }
-    }
-}
-
-impl PythonStructure for PythonIntegerPolynomial {
-    type Structure = PolynomialStructure<IntegerCanonicalStructure, IntegerCanonicalStructure>;
-
-    fn structure(&self) -> Self::Structure {
-        Integer::structure().into_polynomials()
+        Err(CastError::Type)
     }
 
-    fn inner(&self) -> &<Self::Structure as SetSignature>::Set {
-        &self.inner
+    fn proper_supset_cast_impl(&self, obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        if let Ok(n) = PythonRationalPolynomialSet::default().supset_cast_impl(obj) {
+            if let Ok(coeffs) = n
+                .inner
+                .coeffs()
+                .map(Integer::try_from)
+                .collect::<Result<Vec<_>, _>>()
+            {
+                return Ok(PythonIntegerPolynomial {
+                    inner: Polynomial::from_coeffs(coeffs),
+                });
+            } else {
+                return Err(CastError::Value);
+            }
+        }
+        Err(CastError::Type)
     }
 
-    fn into_inner(self) -> <Self::Structure as SetSignature>::Set {
-        self.inner
+    fn other_implicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
+    }
+
+    fn other_explicit_cast_impl(&self, _obj: &Bound<'py, PyAny>) -> Result<Self::Elem, CastError> {
+        Err(CastError::Type)
     }
 }
 
@@ -126,6 +149,6 @@ impl_pymethods_nat_pow!(PythonIntegerPolynomial);
 impl PythonIntegerPolynomial {
     #[new]
     pub fn py_new<'py>(obj: &Bound<'py, PyAny>) -> PyResult<Self> {
-        Self::cast_subtype(obj)
+        PythonIntegerPolynomialSet::default().explicit_cast(obj)
     }
 }

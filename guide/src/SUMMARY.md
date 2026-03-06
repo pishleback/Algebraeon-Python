@@ -3,5 +3,5 @@
 - [Introduction](./introduction.md)
 - [Numbers](./numbers.md)
 - [Polynomials](./polynomials.md)
-- [Factoring](./factoring.md)
+- [Algebraic Numbers](./algebraic.md)
 - [Meta](./meta.md)

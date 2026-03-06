@@ -3,8 +3,8 @@ from algebraeon import *
 assert(Nat(3).set() == Nat)
 assert(Int(3).set() == Int)
 assert(Rat(3).set() == Rat)
-assert(Int.polynomials().var().set() == Int.polynomials())
-assert(Rat.polynomials().var().set() == Rat.polynomials())
+assert(Int.Poly().var().set() == Int.Poly())
+assert(Rat.Poly().var().set() == Rat.Poly())
 
 assert(str(Nat) == "ℕ")
 assert(repr(Nat) == "Nat")
