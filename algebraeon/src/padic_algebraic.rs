@@ -217,7 +217,7 @@ impl PythonPAdicAlgebraic {
         }
     }
 
-      pub fn digits<'py>(&mut self, v: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+    pub fn digits<'py>(&mut self, v: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
         let py = v.py();
         let v = PythonIntegerSet::default().implicit_cast(v)?;
         let (digits, shift) = self.inner.truncate(&v.inner).digits();
