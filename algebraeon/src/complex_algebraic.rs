@@ -13,6 +13,7 @@ use algebraeon::nzq::Rational;
 use algebraeon::rings::isolated_algebraic::ComplexAlgebraic;
 use algebraeon::rings::isolated_algebraic::ComplexAlgebraicCanonicalStructure;
 use algebraeon::rings::isolated_algebraic::ComplexIsolatingRegion;
+use algebraeon::rings::structure::MetaZeroEqSignature;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use num_bigint::BigInt;
@@ -48,41 +49,45 @@ impl_pymethods_set!(PythonComplexAlgebraicSet);
 impl PythonComplexAlgebraicSet {
     pub fn roots<'py>(&self, poly: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
         let py = poly.py();
-        if let Ok(poly) = PythonRationalPolynomialSet::default().implicit_cast(poly) {
-            Ok(PyList::new(
-                py,
-                poly.inner
-                    .all_complex_roots()
-                    .into_iter()
-                    .map(|root| PythonComplexAlgebraic { inner: root })
-                    .collect::<Vec<_>>(),
-            )
-            .unwrap()
-            .into_py_any(py)
-            .unwrap())
-        } else {
-            todo!()
+        let poly = PythonRationalPolynomialSet::default().implicit_cast(poly)?;
+        if poly.inner.is_zero() {
+            return Err(PyValueError::new_err(
+                "Can't take roots of the zero polynomial",
+            ));
         }
+        Ok(PyList::new(
+            py,
+            poly.inner
+                .all_complex_roots()
+                .into_iter()
+                .map(|root| PythonComplexAlgebraic { inner: root })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_py_any(py)
+        .unwrap())
     }
 
     pub fn distinct_roots<'py>(&self, poly: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
         let py = poly.py();
-        if let Ok(poly) = PythonRationalPolynomialSet::default().implicit_cast(poly) {
-            Ok(PyList::new(
-                py,
-                poly.inner
-                    .primitive_squarefree_part()
-                    .all_complex_roots()
-                    .into_iter()
-                    .map(|root| PythonComplexAlgebraic { inner: root })
-                    .collect::<Vec<_>>(),
-            )
-            .unwrap()
-            .into_py_any(py)
-            .unwrap())
-        } else {
-            todo!()
+        let poly = PythonRationalPolynomialSet::default().implicit_cast(poly)?;
+        if poly.inner.is_zero() {
+            return Err(PyValueError::new_err(
+                "Can't take roots of the zero polynomial",
+            ));
         }
+        Ok(PyList::new(
+            py,
+            poly.inner
+                .primitive_squarefree_part()
+                .all_complex_roots()
+                .into_iter()
+                .map(|root| PythonComplexAlgebraic { inner: root })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_py_any(py)
+        .unwrap())
     }
 }
 

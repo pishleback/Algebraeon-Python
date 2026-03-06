@@ -14,6 +14,7 @@ use algebraeon::rings::isolated_algebraic::PAdicAlgebraic;
 use algebraeon::rings::isolated_algebraic::PAdicAlgebraicStructure;
 use algebraeon::rings::isolated_algebraic::PAdicRational;
 use algebraeon::rings::natural::factorization::primes::is_prime_nat;
+use algebraeon::rings::structure::MetaZeroEqSignature;
 use algebraeon::rings::valuation::Valuation;
 use algebraeon::sets::structure::SetSignature;
 use num_bigint::BigInt;
@@ -61,41 +62,45 @@ impl_pymethods_set!(PythonPAdicAlgebraicSet);
 impl PythonPAdicAlgebraicSet {
     pub fn roots<'py>(&self, poly: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
         let py = poly.py();
-        if let Ok(poly) = PythonRationalPolynomialSet::default().implicit_cast(poly) {
-            Ok(PyList::new(
-                py,
-                poly.inner
-                    .all_padic_roots(&self.p)
-                    .into_iter()
-                    .map(|root| PythonPAdicAlgebraic { inner: root })
-                    .collect::<Vec<_>>(),
-            )
-            .unwrap()
-            .into_py_any(py)
-            .unwrap())
-        } else {
-            todo!()
+        let poly = PythonRationalPolynomialSet::default().implicit_cast(poly)?;
+        if poly.inner.is_zero() {
+            return Err(PyValueError::new_err(
+                "Can't take roots of the zero polynomial",
+            ));
         }
+        Ok(PyList::new(
+            py,
+            poly.inner
+                .all_padic_roots(&self.p)
+                .into_iter()
+                .map(|root| PythonPAdicAlgebraic { inner: root })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_py_any(py)
+        .unwrap())
     }
 
     pub fn distinct_roots<'py>(&self, poly: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
         let py = poly.py();
-        if let Ok(poly) = PythonRationalPolynomialSet::default().implicit_cast(poly) {
-            Ok(PyList::new(
-                py,
-                poly.inner
-                    .primitive_squarefree_part()
-                    .all_padic_roots(&self.p)
-                    .into_iter()
-                    .map(|root| PythonPAdicAlgebraic { inner: root })
-                    .collect::<Vec<_>>(),
-            )
-            .unwrap()
-            .into_py_any(py)
-            .unwrap())
-        } else {
-            todo!()
+        let poly = PythonRationalPolynomialSet::default().implicit_cast(poly)?;
+        if poly.inner.is_zero() {
+            return Err(PyValueError::new_err(
+                "Can't take roots of the zero polynomial",
+            ));
         }
+        Ok(PyList::new(
+            py,
+            poly.inner
+                .primitive_squarefree_part()
+                .all_padic_roots(&self.p)
+                .into_iter()
+                .map(|root| PythonPAdicAlgebraic { inner: root })
+                .collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_py_any(py)
+        .unwrap())
     }
 }
 
