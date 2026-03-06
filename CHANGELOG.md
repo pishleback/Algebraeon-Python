@@ -6,6 +6,9 @@ All notable changes to this project should be documented in this file.
 
  - Allow explicitly converting from a larger set to a smaller set.
  - Added `RealAlg` for real algebraic numbers.
+ - Added `CpxAlg` for real algebraic numbers.
+ - Added `PAdicAlg` for real algebraic numbers.
+ - Added `Nat.primes()` to return an iterator over all primes.
 
 ## [0.0.2] - 2026-01-15
 

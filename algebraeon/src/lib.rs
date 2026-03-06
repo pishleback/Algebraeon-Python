@@ -354,6 +354,7 @@ macro_rules! impl_pymethods_to_polynomial_set {
     ($python_type:ident) => {
         #[pymethods]
         impl $python_type {
+            #[pyo3(name = "Poly")]
             pub fn polynomials(&self) -> <$python_type as PythonToPolynomialSet>::PolynomialSet {
                 PythonToPolynomialSet::polynomials(self)
             }
@@ -842,6 +843,35 @@ macro_rules! impl_pymethods_int_pow {
             ) -> PyResult<Py<PyAny>> {
                 let py = other.py();
                 Ok(py.NotImplemented())
+            }
+        }
+    };
+}
+
+macro_rules! py_iterator_for {
+    ($name:ty, $iter_name:ident) => {
+        #[pyclass(unsendable)]
+        pub struct $iter_name {
+            inner: Box<dyn Iterator<Item = $name>>,
+        }
+
+        impl $iter_name {
+            fn new(inner: Box<dyn Iterator<Item = $name>>) -> Self {
+                Self { inner }
+            }
+        }
+
+        #[pymethods]
+        impl $iter_name {
+            fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
+                slf
+            }
+
+            fn __next__(mut slf: PyRefMut<Self>) -> PyResult<$name> {
+                match slf.inner.next() {
+                    Some(item) => Ok(item),
+                    None => Err(pyo3::exceptions::PyStopIteration::new_err(())),
+                }
             }
         }
     };

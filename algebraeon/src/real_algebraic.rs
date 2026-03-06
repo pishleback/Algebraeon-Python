@@ -190,4 +190,12 @@ impl PythonRealAlgebraic {
             .unwrap(),
         }
     }
+
+    pub fn approximate<'py>(&mut self, r: &Bound<'py, PyAny>) -> PyResult<PythonRational> {
+        let r = PythonRationalSet::default().implicit_cast(r)?;
+        self.inner.refine_to_accuracy_mut(&r.inner);
+        Ok(PythonRational {
+            inner: self.inner.approximate(),
+        })
+    }
 }

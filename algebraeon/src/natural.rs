@@ -7,6 +7,7 @@ use crate::bignum_to_algebraeon_int;
 use crate::integer::PythonIntegerSet;
 use ::algebraeon::nzq::Natural;
 use ::algebraeon::nzq::NaturalCanonicalStructure;
+use algebraeon::nzq::primes;
 use algebraeon::sets::structure::MetaType;
 use algebraeon::sets::structure::SetSignature;
 use num_bigint::{BigInt, BigUint};
@@ -35,6 +36,17 @@ impl PythonSet for PythonNaturalSet {
 }
 
 impl_pymethods_set!(PythonNaturalSet);
+
+py_iterator_for!(PythonNatural, PythonNaturalPrimeIterator);
+
+#[pymethods]
+impl PythonNaturalSet {
+    pub fn primes(&self) -> PythonNaturalPrimeIterator {
+        PythonNaturalPrimeIterator::new(Box::new(primes().map(|p| PythonNatural {
+            inner: Natural::from(p),
+        })))
+    }
+}
 
 #[pyclass(name = "Nat")]
 #[derive(Debug, Clone)]

@@ -4,9 +4,12 @@ use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::integer::PythonIntegerSet;
 use crate::rational::PythonRational;
+use crate::rational::PythonRationalSet;
 use crate::rational_polynomial::PythonRationalPolynomial;
 use crate::rational_polynomial::PythonRationalPolynomialSet;
 use crate::real_algebraic::PythonRealAlgebraicSet;
+use algebraeon::nzq::Integer;
+use algebraeon::nzq::Rational;
 use algebraeon::rings::isolated_algebraic::ComplexAlgebraic;
 use algebraeon::rings::isolated_algebraic::ComplexAlgebraicCanonicalStructure;
 use algebraeon::rings::isolated_algebraic::ComplexIsolatingRegion;
@@ -223,5 +226,20 @@ impl PythonComplexAlgebraic {
             .into_py_any(py)
             .unwrap(),
         }
+    }
+
+    pub fn approximate<'py>(
+        &mut self,
+        r: &Bound<'py, PyAny>,
+    ) -> PyResult<(PythonRational, PythonRational)> {
+        let r = PythonRationalSet::default().implicit_cast(r)?;
+        self.inner.refine_to_accuracy_mut(
+            // *2/3 because refine_to_accuracy_mut gets the real and imaginary parts closer than the given value.
+            // But we want the Euclidean norm to be closer.
+            // 2/3 is chosen since it is simple and less than 1/sqrt(2)
+            &(r.inner * Rational::from_integers(Integer::from(2), Integer::from(3))),
+        );
+        let (re, im) = self.inner.approximate();
+        Ok((PythonRational { inner: re }, PythonRational { inner: im }))
     }
 }

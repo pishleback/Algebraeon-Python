@@ -4,6 +4,7 @@ use crate::PythonElementCast;
 use crate::PythonSet;
 use crate::integer::PythonInteger;
 use crate::integer::PythonIntegerSet;
+use crate::natural::PythonNatural;
 use crate::rational::PythonRational;
 use crate::rational::PythonRationalSet;
 use crate::rational_polynomial::PythonRationalPolynomial;
@@ -214,5 +215,37 @@ impl PythonPAdicAlgebraic {
                 .unwrap()
             }
         }
+    }
+
+      pub fn digits<'py>(&mut self, v: &Bound<'py, PyAny>) -> PyResult<Py<PyAny>> {
+        let py = v.py();
+        let v = PythonIntegerSet::default().implicit_cast(v)?;
+        let (digits, shift) = self.inner.truncate(&v.inner).digits();
+        Ok(PyTuple::new(
+            py,
+            vec![
+                PyList::new(
+                    py,
+                    digits
+                        .into_iter()
+                        .map(|d| PythonNatural { inner: d })
+                        .collect::<Vec<_>>(),
+                )
+                .unwrap()
+                .into_py_any(py)
+                .unwrap(),
+                PythonInteger { inner: shift }.into_py_any(py).unwrap(),
+            ],
+        )
+        .unwrap()
+        .into_py_any(py)
+        .unwrap())
+    }
+
+    pub fn approximate<'py>(&mut self, v: &Bound<'py, PyAny>) -> PyResult<PythonRational> {
+        let v = PythonIntegerSet::default().implicit_cast(v)?;
+        Ok(PythonRational {
+            inner: self.inner.truncate(&v.inner).rational_value(),
+        })
     }
 }
